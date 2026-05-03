@@ -45,8 +45,10 @@ public class AuthController {
     }
 
     @PostMapping("/logout")
-    public void logout(@RequestParam String token) {
+    public ResponseEntity<?> logout(@RequestParam String token) {
+
         authService.logout(token);
+        return ResponseEntity.ok("Đăng xuất thành công!");
     }
 
 
