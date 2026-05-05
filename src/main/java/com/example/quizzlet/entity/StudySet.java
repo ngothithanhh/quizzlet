@@ -3,6 +3,7 @@ package com.example.quizzlet.entity;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Entity
@@ -36,4 +37,5 @@ public class StudySet extends BaseEntity {
 
     @OneToMany(mappedBy = "studySet", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Flashcard> flashcards;
+
 }
