@@ -8,6 +8,7 @@ import java.util.List;
 
 @Data
 public class FlashcardRequest {
+    private Long id;
     private String term;
 
     private String definition;

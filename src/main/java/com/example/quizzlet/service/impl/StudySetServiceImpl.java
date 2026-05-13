@@ -64,8 +64,30 @@ public class StudySetServiceImpl implements StudySetService {
 
         StudySetMapper.updateEntity(studySet,request);
 
-        return StudySetMapper.toResponse(studySetRepository.save(studySet));
+        if (request.getFlashcards() != null) {
+            List<Flashcard> updatedFlashcards = new ArrayList<>();
+            int position = 0;
+            for (FlashcardRequest fReq : request.getFlashcards()) {
+                Flashcard f;
+                if (fReq.getId() != null) {
+                    f = studySet.getFlashcards().stream()
+                            .filter(card -> fReq.getId().equals(card.getId()))
+                            .findFirst()
+                            .orElse(new Flashcard());
+                    f.setTerm(fReq.getTerm());
+                    f.setDefinition(fReq.getDefinition());
+                } else {
+                    f = com.example.quizzlet.mapper.FlashcardMapper.toEntity(fReq);
+                }
+                f.setStudySet(studySet);
+                f.setPosition(position++);
+                updatedFlashcards.add(f);
+            }
+            studySet.getFlashcards().clear();
+            studySet.getFlashcards().addAll(updatedFlashcards);
+        }
 
+        return StudySetMapper.toResponse(studySetRepository.save(studySet));
     }
 
     @Transactional

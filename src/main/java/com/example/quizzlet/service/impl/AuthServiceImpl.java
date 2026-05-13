@@ -60,7 +60,7 @@ public class AuthServiceImpl implements AuthService {
         if(!user.getIsVerified())
             throw new RuntimeException("Tài khoản chưa được xác thực!");
 
-        String accessToken = jwtUtil.generateToken(user.getEmail());
+        String accessToken = jwtUtil.generateToken(user);
         RefreshToken refreshToken = refreshTokenService.createToken(user);
 
         return AuthResponse.builder()
@@ -73,7 +73,7 @@ public class AuthServiceImpl implements AuthService {
     public AuthResponse refresh(String refreshToken){
         RefreshToken token = refreshTokenService.verify(refreshToken);
 
-        String newAccessToken = jwtUtil.generateToken(token.getUser().getEmail());
+        String newAccessToken = jwtUtil.generateToken(token.getUser());
 
         return AuthResponse.builder()
                 .accessToken(newAccessToken)

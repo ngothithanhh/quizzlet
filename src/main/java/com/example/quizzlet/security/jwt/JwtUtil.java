@@ -21,10 +21,12 @@ public class JwtUtil {
         return Keys.hmacShaKeyFor(secret.getBytes());
     }
 
-    // Tạo token từ email
-    public String generateToken(String email) {
+    // Tạo token từ user
+    public String generateToken(com.example.quizzlet.entity.User user) {
         return Jwts.builder()
-                .setSubject(email) // dùng email làm subject
+                .setSubject(user.getEmail()) // dùng email làm subject
+                .claim("userId", user.getId())
+                .claim("username", user.getUsername())
                 .setIssuedAt(new Date())
                 .setExpiration(new Date(System.currentTimeMillis() + expiration))
                 .signWith(getKey())
