@@ -6,11 +6,14 @@ import com.example.quizzlet.dto.flashcard.FlashcardRequest;
 import com.example.quizzlet.dto.flashcard.FlashcardResponse;
 import com.example.quizzlet.entity.Flashcard;
 import com.example.quizzlet.entity.FlashcardMedia;
+import com.example.quizzlet.entity.StudySet;
+import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
+@Component
 public class FlashcardMapper {
 
     public static FlashcardResponse toResponse(Flashcard entity) {
@@ -30,6 +33,8 @@ public class FlashcardMapper {
 
     public static Flashcard toEntity(FlashcardRequest request) {
         if (request == null) return null;
+
+
 
         return Flashcard.builder()
                 .term(request.getTerm())

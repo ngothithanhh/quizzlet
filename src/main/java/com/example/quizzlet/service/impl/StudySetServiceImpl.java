@@ -1,19 +1,23 @@
 package com.example.quizzlet.service.impl;
 
-import com.example.quizzlet.dto.studyset.StudySetRequest;
-import com.example.quizzlet.dto.studyset.StudySetResponse;
-import com.example.quizzlet.dto.studyset.StudySetSimpleResponse;
+import com.example.quizzlet.dto.flashcard.FlashcardRequest;
+import com.example.quizzlet.dto.study.StudySetRequest;
+import com.example.quizzlet.dto.study.StudySetResponse;
+import com.example.quizzlet.dto.study.StudySetSimpleResponse;
+import com.example.quizzlet.entity.Flashcard;
 import com.example.quizzlet.entity.StudySet;
 import com.example.quizzlet.entity.User;
 import com.example.quizzlet.mapper.StudySetMapper;
 import com.example.quizzlet.repository.StudySetRepository;
 import com.example.quizzlet.repository.UserRepository;
+import com.example.quizzlet.service.FlashcardStudyService;
 import com.example.quizzlet.service.StudySetService;
 import com.example.quizzlet.ultils.SecurityUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -31,6 +35,23 @@ public class StudySetServiceImpl implements StudySetService {
 
         User user = userRepository.findById(userId).orElseThrow(()-> new RuntimeException("Không tìm thấy người dùng!"));
         studySet.setUser(user);
+
+        if(request.getFlashcards() != null && !request.getFlashcards().isEmpty()){
+            List<FlashcardRequest> flashcards = new ArrayList<>();
+            flashcards = request.getFlashcards();
+            int i = 0;
+            for (Flashcard flashcard : studySet.getFlashcards()){
+                flashcard.setStudySet(studySet);
+                flashcard.setPosition(i++);
+
+                if (flashcard.getMediaList() != null) {
+                    flashcard.getMediaList()
+                            .forEach(media -> media.setFlashcard(flashcard));
+                }
+
+            }
+
+        }
 
         return StudySetMapper.toResponse(studySetRepository.save(studySet));
 

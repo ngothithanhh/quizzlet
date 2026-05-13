@@ -1,10 +1,9 @@
 package com.example.quizzlet.controller;
 
-import com.example.quizzlet.dto.studyset.StudySetRequest;
-import com.example.quizzlet.dto.studyset.StudySetResponse;
-import com.example.quizzlet.dto.studyset.StudySetSimpleResponse;
+import com.example.quizzlet.dto.study.StudySetRequest;
+import com.example.quizzlet.dto.study.StudySetResponse;
+import com.example.quizzlet.dto.study.StudySetSimpleResponse;
 import com.example.quizzlet.service.StudySetService;
-import com.example.quizzlet.ultils.SecurityUtils;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;

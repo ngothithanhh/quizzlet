@@ -29,6 +29,7 @@ public class StudySession {
     private LocalDateTime endedAt;
 
     @ManyToOne
+    @JoinColumn(name = "user_id")
     private User user;
 
     @ManyToOne

@@ -1,13 +1,10 @@
 package com.example.quizzlet.mapper;
 
-import com.example.quizzlet.dto.flashcard.FlashcardRequest;
-import com.example.quizzlet.dto.studyset.StudySetRequest;
-import com.example.quizzlet.dto.studyset.StudySetResponse;
-import com.example.quizzlet.dto.studyset.StudySetSimpleResponse;
-import com.example.quizzlet.entity.Flashcard;
+import com.example.quizzlet.dto.study.StudySetRequest;
+import com.example.quizzlet.dto.study.StudySetResponse;
+import com.example.quizzlet.dto.study.StudySetSimpleResponse;
 import com.example.quizzlet.entity.StudySet;
 
-import java.time.LocalDateTime;
 import java.util.stream.Collectors;
 
 public class StudySetMapper {
@@ -50,6 +47,7 @@ public class StudySetMapper {
                 .title(request.getTitle())
                 .description(request.getDescription())
                 .isPublic(request.getIsPublic())
+                .flashcards(request.getFlashcards() != null ? request.getFlashcards().stream().map(FlashcardMapper::toEntity).collect(Collectors.toList()): null)
                 .build();
     }
 

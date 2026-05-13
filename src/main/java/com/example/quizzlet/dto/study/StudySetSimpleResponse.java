@@ -1,4 +1,4 @@
-package com.example.quizzlet.dto.studyset;
+package com.example.quizzlet.dto.study;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;

@@ -1,4 +1,4 @@
-package com.example.quizzlet.dto.studyset;
+package com.example.quizzlet.dto.study;
 
 import com.example.quizzlet.dto.flashcard.FlashcardResponse;
 import lombok.AllArgsConstructor;

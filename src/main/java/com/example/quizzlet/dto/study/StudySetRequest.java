@@ -1,4 +1,4 @@
-package com.example.quizzlet.dto.studyset;
+package com.example.quizzlet.dto.study;
 
 import com.example.quizzlet.dto.flashcard.FlashcardRequest;
 import jakarta.validation.constraints.NotBlank;
