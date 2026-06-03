@@ -48,7 +48,7 @@ public class OAuth2SuccessHandler  implements AuthenticationSuccessHandler {
         });
 
         // Tạo token
-        String accessToken = jwtUtil.generateToken(user.getEmail());
+        String accessToken = jwtUtil.generateToken(user);
         RefreshToken refreshToken = refreshTokenService.createToken(user);
 
         // Redirect về NextJS

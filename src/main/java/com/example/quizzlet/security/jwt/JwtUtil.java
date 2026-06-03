@@ -1,5 +1,6 @@
 package com.example.quizzlet.security.jwt;
 
+import com.example.quizzlet.entity.User;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
@@ -22,7 +23,7 @@ public class JwtUtil {
     }
 
     // Tạo token từ user
-    public String generateToken(com.example.quizzlet.entity.User user) {
+    public String generateToken(User user) {
         return Jwts.builder()
                 .setSubject(user.getEmail()) // dùng email làm subject
                 .claim("userId", user.getId())

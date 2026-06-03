@@ -38,4 +38,7 @@ public class StudySet extends BaseEntity {
     @OneToMany(mappedBy = "studySet", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Flashcard> flashcards;
 
+    @ManyToMany(mappedBy = "studySets")
+    private List<Classroom> classrooms;
+
 }

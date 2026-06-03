@@ -23,10 +23,6 @@ public class ClassMember {
     @Enumerated(EnumType.STRING)
     private ClassRole role = ClassRole.STUDENT;
 
-    @Builder.Default
-    @Column(name = "is_creator")
-    private Boolean isCreator = false;
-
     @Column(name = "joined_at")
     private LocalDateTime joinedAt;
 
