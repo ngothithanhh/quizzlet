@@ -1,0 +1,14 @@
+target/
+.idea/
+.vscode/
+
+.env
+.env.*
+!.env.example
+
+*.log
+*.class
+*.jar
+*.war
+
+/.mvn/wrapper/maven-wrapper.jar
