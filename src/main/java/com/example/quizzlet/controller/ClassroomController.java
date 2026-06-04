@@ -1,10 +1,14 @@
 package com.example.quizzlet.controller;
 
 
+import com.example.quizzlet.dto.classroom.AddMemberRequest;
 import com.example.quizzlet.dto.classroom.ClassMemberResponse;
 import com.example.quizzlet.dto.classroom.ClassroomRequest;
 import com.example.quizzlet.dto.classroom.ClassroomResponse;
+import com.example.quizzlet.dto.study.StudySetResponse;
+import com.example.quizzlet.enums.ClassRole;
 import com.example.quizzlet.service.ClassroomService;
+import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -50,16 +54,44 @@ public class ClassroomController {
         return ResponseEntity.ok(classroomService.joinClassroom(classCode));
     }
 
-    @GetMapping("/{classId}/members")
-    public ResponseEntity<List<ClassMemberResponse>> getClassMembers(
-            @PathVariable("classId") Long classId
-    ) {
+    @PostMapping("/leave/{classId}")
+    public ResponseEntity<String> leaveClassroom(@PathVariable Long classId){
+        return ResponseEntity.ok(classroomService.leaveClassroom(classId));
+    }
+
+    @GetMapping("/getClassMembers/{classId}")
+    public ResponseEntity<List<ClassMemberResponse>> getClassMembers(@PathVariable Long classId){
         return ResponseEntity.ok(classroomService.getClassMembers(classId));
+    }
+
+    @PostMapping("/add-member/{classId}")
+    public ResponseEntity<String> addMember(@PathVariable Long classId, @RequestBody AddMemberRequest request){
+        return ResponseEntity.ok(classroomService.addMember(classId,request));
+    }
+
+    @DeleteMapping("/delete-member/{classId}/{targetUserId}")
+    public ResponseEntity<String> deleteMember(@PathVariable Long classId, @PathVariable Long targetUserId){
+        return ResponseEntity.ok(classroomService.removeMember(classId,targetUserId));
+    }
+
+    @PutMapping("/update-role-member/{classId}/{targetUserId}/{role}")
+    public ResponseEntity<ClassMemberResponse> updateMemberRole(@PathVariable Long classId, @PathVariable Long targetUserId, @PathVariable ClassRole role){
+        return ResponseEntity.ok(classroomService.updateMemberRole(classId,targetUserId,role));
     }
 
     @PostMapping("/{classId}/add-studyset/{studySetId}")
     public ResponseEntity<ClassroomResponse> addStudySetToClassroom(@PathVariable Long classId, @PathVariable Long studySetId){
         return ResponseEntity.ok(classroomService.addStudySet(classId,studySetId));
+    }
+
+    @GetMapping("/studysets/{classId}")
+    public ResponseEntity<List<StudySetResponse>> getStudySetsByClassroom(@PathVariable Long classId){
+        return ResponseEntity.ok(classroomService.getStudySetsByClassroom(classId));
+    }
+
+    @DeleteMapping("/delete-studyset/{classId}/{studySetId}")
+    public ResponseEntity<String> deleteStudySet(@PathVariable Long classId, @PathVariable Long studySetId){
+        return ResponseEntity.ok(classroomService.removeStudySet(classId,studySetId));
     }
 
 

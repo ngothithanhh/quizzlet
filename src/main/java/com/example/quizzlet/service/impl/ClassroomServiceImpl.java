@@ -4,10 +4,12 @@ import com.example.quizzlet.dto.classroom.AddMemberRequest;
 import com.example.quizzlet.dto.classroom.ClassMemberResponse;
 import com.example.quizzlet.dto.classroom.ClassroomRequest;
 import com.example.quizzlet.dto.classroom.ClassroomResponse;
+import com.example.quizzlet.dto.study.StudySetResponse;
 import com.example.quizzlet.entity.*;
 import com.example.quizzlet.enums.ClassRole;
 import com.example.quizzlet.mapper.ClassMemberMapper;
 import com.example.quizzlet.mapper.ClassroomMapper;
+import com.example.quizzlet.mapper.StudySetMapper;
 import com.example.quizzlet.repository.ClassMemberRepository;
 import com.example.quizzlet.repository.ClassroomRepository;
 import com.example.quizzlet.repository.StudySetRepository;
@@ -23,6 +25,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -244,8 +247,6 @@ public class ClassroomServiceImpl implements ClassroomService {
         return ClassMemberMapper.toClassMemberResponse(memberRepository.save(targetMember));
     }
 
-
-
     //them bo the vao lop hoc
     @Override
     public ClassroomResponse addStudySet(Long classroomId, Long studySetId){
@@ -272,7 +273,44 @@ public class ClassroomServiceImpl implements ClassroomService {
 
     }
 
+    //lay danh sach bo the cua lop
+    @Override
+    public List<StudySetResponse> getStudySetsByClassroom(Long classroomId){
+        Long userId = SecurityUtils.getCurrentUserId();
+
+        ClassMember member = memberRepository.findByClassroomIdAndUserId(classroomId,userId).orElseThrow(()-> new RuntimeException("Không tìm thấy lớp học hoặc bạn không phải là thành viên!"));
+
+        Classroom classroom = classroomRepository.findById(classroomId).orElseThrow(()->new RuntimeException("Không tìm thấy lớp học!"));
+
+        return classroom.getStudySets().stream()
+                .map(StudySetMapper::toResponse)
+                .collect(Collectors.toList());
+    }
+
     //xoa bo the
+    @Override
+    public String removeStudySet(Long classroomId, Long studySetId){
+        Long userId = SecurityUtils.getCurrentUserId();
+
+        ClassMember member = memberRepository.findByClassroomIdAndUserId(classroomId,userId).orElseThrow(()-> new RuntimeException("Không tìm thấy lớp học hoặc bạn không phải là thành viên!"));
+
+        if(member.getRole() == ClassRole.STUDENT){
+            throw new RuntimeException("Bạn không có quyền thêm!");
+        }
+
+        Classroom classroom = classroomRepository.findById(classroomId).orElseThrow(()->new RuntimeException("Không tìm thấy lớp học!"));
+
+        StudySet studySet = studySetRepository.findById(studySetId).orElseThrow(()->new RuntimeException("Không tìm thấy bộ thẻ!"));
+
+        if(classroom.getStudySets().contains(studySet)){
+            classroom.getStudySets().remove(studySet);
+            classroomRepository.save(classroom);
+        }
+
+        return "Xóa thành công!";
+
+    }
+
 
 
 

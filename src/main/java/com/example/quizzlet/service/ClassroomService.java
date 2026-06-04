@@ -4,6 +4,7 @@ import com.example.quizzlet.dto.classroom.AddMemberRequest;
 import com.example.quizzlet.dto.classroom.ClassMemberResponse;
 import com.example.quizzlet.dto.classroom.ClassroomRequest;
 import com.example.quizzlet.dto.classroom.ClassroomResponse;
+import com.example.quizzlet.dto.study.StudySetResponse;
 import com.example.quizzlet.entity.ClassMember;
 import com.example.quizzlet.enums.ClassRole;
 import com.example.quizzlet.ultils.SecurityUtils;
@@ -22,6 +23,10 @@ public interface ClassroomService {
 
     ClassroomResponse addStudySet(Long classroomId, Long studySetId);
 
+    String removeStudySet(Long classroomId, Long studySetId);
+
+    List<StudySetResponse> getStudySetsByClassroom(Long classroomId);
+
     void delete(Long id);
 
     ClassroomResponse update(Long id, ClassroomRequest request);
@@ -35,4 +40,6 @@ public interface ClassroomService {
     String leaveClassroom(Long classId);
 
     ClassMemberResponse updateMemberRole(Long classId, Long targetUserId, ClassRole role);
+
+
 }

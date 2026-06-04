@@ -30,9 +30,11 @@ public class Assignment {
     private LocalDateTime createdAt;
 
     @ManyToOne
+    @JoinColumn(name = "classroom_id")
     private Classroom classroom;
 
     @ManyToOne
+    @JoinColumn(name = "test_id")
     private Test test;
 
     @ManyToOne
