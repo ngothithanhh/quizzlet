@@ -21,4 +21,7 @@ public class AssignmentResponse {
     private Boolean allowReview;
     private LocalDateTime dueDate;
     private LocalDateTime createdAt;
+    
+    private Integer currentUserBestScore;
+    private Integer currentUserAttemptCount;
 }

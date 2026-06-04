@@ -23,6 +23,7 @@ public class AssignmentServiceImpl implements AssignmentService {
     private final UserRepository userRepository;
     private final TestRepository testRepository;
     private final AssignmentRepository assignmentRepository;
+    private final AssignmentSubmissionRepository assignmentSubmissionRepository;
 
     @Override
     public AssignmentResponse createAssignment(Long classId, AssignmentRequest request){
@@ -64,7 +65,15 @@ public class AssignmentServiceImpl implements AssignmentService {
 
         return assignmentRepository.findByClassroomId(classId)
                 .stream()
-                .map(AssignmentMapper::toResponse)
+                .map(assignment -> {
+                    AssignmentResponse response = AssignmentMapper.toResponse(assignment);
+                    assignmentSubmissionRepository.findByAssignmentIdAndUserId(assignment.getId(), userId)
+                            .ifPresent(submission -> {
+                                response.setCurrentUserBestScore(submission.getBestScore());
+                                response.setCurrentUserAttemptCount(submission.getAttemptCount());
+                            });
+                    return response;
+                })
                 .collect(Collectors.toList());
     }
 
