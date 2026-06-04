@@ -28,6 +28,36 @@ public class TestServiceImpl implements TestService {
     private final TestQuestionOptionRepository testQuestionOptionRepository;
 
     @Override
+    public TestCardResponse getTestById(Long id) {
+        Test test = testRepository.findById(id).orElseThrow(() -> new RuntimeException("Không tìm thấy bài thi!"));
+        
+        List<TestQuestionResponse> questionResponses = testQuestionRepository.findByTestId(id).stream().map(q -> {
+            List<TestOptionResponse> options = testQuestionOptionRepository.findByQuestionId(q.getId()).stream().map(opt -> 
+                TestOptionResponse.builder()
+                    .id(opt.getId())
+                    .optionText(opt.getOptionText())
+                    .isCorrect(opt.getIsCorrect())
+                    .build()
+            ).toList();
+            
+            return TestQuestionResponse.builder()
+                .id(q.getId())
+                .flashcardId(q.getFlashcard().getId())
+                .question(q.getQuestion())
+                .correctAnswer(q.getCorrectAnswer())
+                .options(options)
+                .build();
+        }).toList();
+
+        return TestCardResponse.builder()
+                .testId(test.getId())
+                .studysetId(test.getStudySet().getId())
+                .title(test.getTitle())
+                .questions(questionResponses)
+                .build();
+    }
+
+    @Override
     public TestCardResponse generate(CreateTestRequest request){
         Long userId = SecurityUtils.getCurrentUserId();
 

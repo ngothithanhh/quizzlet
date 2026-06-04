@@ -8,4 +8,6 @@ import java.util.List;
 
 public interface TestAttemptRepository extends JpaRepository<TestAttempt, Long> {
     List<TestAttempt> findByUserOrderBySubmittedAtDesc(User user);
+
+    List<TestAttempt> findByTestIdAndUserId(Long testId, Long userId);
 }

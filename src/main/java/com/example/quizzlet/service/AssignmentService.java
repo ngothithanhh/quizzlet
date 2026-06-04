@@ -9,4 +9,8 @@ public interface AssignmentService {
     AssignmentResponse createAssignment(Long classId, AssignmentRequest request);
 
     List<AssignmentResponse> getClassAssignments(Long classId);
+
+    AssignmentResponse getAssignmentDetail(Long assignmentId);
+
+    void deleteAssignment(Long assignmentId);
 }

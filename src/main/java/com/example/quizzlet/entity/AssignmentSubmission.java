@@ -20,7 +20,12 @@ public class AssignmentSubmission {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private Integer score;
+    @Column(name = "best_score")
+    private Integer bestScore;
+
+    @Column(name = "attempt_count")
+    private Integer attemptCount;
+
     private LocalDateTime completedAt;
 
     @Enumerated(EnumType.STRING)

@@ -67,4 +67,39 @@ public class AssignmentServiceImpl implements AssignmentService {
                 .map(AssignmentMapper::toResponse)
                 .collect(Collectors.toList());
     }
+
+    @Override
+    public AssignmentResponse getAssignmentDetail(Long assignmentId){
+        Long userId = SecurityUtils.getCurrentUserId();
+
+        Assignment assignment = assignmentRepository.findById(assignmentId)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy bài tập!"));
+
+        Long classId = assignment.getClassroom().getId();
+
+        memberRepository.findByClassroomIdAndUserId(classId, userId)
+                .orElseThrow(() -> new RuntimeException("Bạn không phải thành viên lớp học này!"));
+
+        return AssignmentMapper.toResponse(assignment);
+
+    }
+
+    @Override
+    public void deleteAssignment(Long assignmentId){
+        Long userId = SecurityUtils.getCurrentUserId();
+
+        Assignment assignment = assignmentRepository.findById(assignmentId)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy bài tập!"));
+
+        Long classId = assignment.getClassroom().getId();
+
+        ClassMember member = memberRepository.findByClassroomIdAndUserId(classId, userId)
+                .orElseThrow(() -> new RuntimeException("Bạn không phải thành viên lớp học này!"));
+
+        if (member.getRole() == ClassRole.STUDENT) {
+            throw new RuntimeException("Bạn không có quyền xóa bài tập!");
+        }
+
+        assignmentRepository.delete(assignment);
+    }
 }

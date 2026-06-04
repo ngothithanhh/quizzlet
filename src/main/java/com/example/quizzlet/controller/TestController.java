@@ -15,6 +15,11 @@ import org.springframework.web.bind.annotation.*;
 public class TestController {
     private final TestService testService;
 
+    @GetMapping("/{id}")
+    public ResponseEntity<TestCardResponse> getTestById(@PathVariable Long id) {
+        return ResponseEntity.ok(testService.getTestById(id));
+    }
+
     @PostMapping("/generate")
     public ResponseEntity<TestCardResponse> generateTest(@RequestBody CreateTestRequest request) {
         return ResponseEntity.ok(testService.generate(request));

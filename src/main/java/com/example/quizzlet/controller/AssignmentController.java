@@ -24,4 +24,15 @@ public class AssignmentController {
     public ResponseEntity<List<AssignmentResponse>> getClassAssignments(@PathVariable Long classId){
         return ResponseEntity.ok(assignmentService.getClassAssignments(classId));
     }
+
+    @GetMapping("/assignments/{assignmentId}")
+    public ResponseEntity<AssignmentResponse> getAssignmentDetail(@PathVariable("assignmentId") Long assignmentId) {
+        return ResponseEntity.ok(assignmentService.getAssignmentDetail(assignmentId));
+    }
+
+    @DeleteMapping("/assignments/{assignmentId}")
+    public ResponseEntity<Void> deleteAssignment(@PathVariable("assignmentId") Long assignmentId) {
+        assignmentService.deleteAssignment(assignmentId);
+        return ResponseEntity.noContent().build();
+    }
 }
