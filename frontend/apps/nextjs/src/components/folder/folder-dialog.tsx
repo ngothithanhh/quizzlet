@@ -1,0 +1,180 @@
+"use client";
+
+import type { ReactNode } from "react";
+import Link from "next/link";
+import { Loader2Icon } from "lucide-react";
+
+import type { CreateFolderValues, EditFolderValues } from "@acme/validators";
+import { Button } from "@acme/ui/button";
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@acme/ui/dialog";
+import {
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+  useForm,
+} from "@acme/ui/form";
+import { Input } from "@acme/ui/input";
+import { Textarea } from "@acme/ui/textarea";
+import { toast } from "@acme/ui/toast";
+import { CreateFolderSchema, EditFolderSchema } from "@acme/validators";
+
+import { api } from "~/trpc/react";
+
+interface FolderDialogProps {
+  children?: ReactNode;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+  defaultValues?: EditFolderValues;
+}
+
+const FolderDialog = ({
+  children,
+  open,
+  onOpenChange,
+  defaultValues,
+}: FolderDialogProps) => {
+  const utils = api.useUtils();
+  const form = useForm({
+    schema: defaultValues ? EditFolderSchema : CreateFolderSchema,
+    defaultValues: defaultValues ?? {
+      name: "",
+      description: "",
+    },
+  });
+  const create = api.folder.create.useMutation({
+    async onSuccess(data) {
+      await utils.folder.invalidate();
+      toast.success(
+        <span>
+          Đã tạo thư mục mới, xem{" "}
+          <Link
+            href={`/users/${data.userId}/folders/${data.slug}`}
+            className="underline"
+          >
+            tại đây
+          </Link>
+        </span>,
+      );
+      form.reset();
+      if (onOpenChange) {
+        onOpenChange(false);
+      }
+    },
+    onError() {
+      toast.error("Không thể tạo thư mục, vui lòng thử lại");
+    },
+  });
+  const edit = api.folder.edit.useMutation({
+    async onSuccess(data) {
+      await utils.folder.invalidate();
+      toast.success("Đã lưu thư mục");
+      form.reset({
+        name: data.name,
+        description: data.description ?? undefined,
+      });
+      if (onOpenChange) {
+        onOpenChange(false);
+      }
+    },
+    onError() {
+      toast.error("Không thể lưu thư mục. Vui lòng thử lại");
+    },
+  });
+
+  function onSubmit(values: EditFolderValues | CreateFolderValues) {
+    if ("id" in values) {
+      edit.mutate(values);
+    } else {
+      create.mutate(values);
+    }
+  }
+
+  const isPending = create.isPending || edit.isPending;
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      {children && <DialogTrigger asChild>{children}</DialogTrigger>}
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>{defaultValues ? "Sửa" : "Tạo"} thư mục</DialogTitle>
+          <DialogDescription>
+            Quản lý học phần của bạn bên trong thư mục.
+          </DialogDescription>
+        </DialogHeader>
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+            <FormField
+              control={form.control}
+              name="name"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Tên thư mục</FormLabel>
+                  <FormControl>
+                    <Input
+                      disabled={isPending}
+                      placeholder="Ví dụ: Tiếng Anh"
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormDescription>
+                    Tên hiển thị công khai của thư mục.
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="description"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Mô tả (tuỳ chọn)</FormLabel>
+                  <FormControl>
+                    <Textarea
+                      disabled={isPending}
+                      placeholder="Mô tả ngắn về thư mục này..."
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormDescription>
+                    Mô tả hiển thị công khai của thư mục.
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <div className="flex justify-end gap-2">
+              <DialogClose asChild>
+                <Button variant="outline">Đóng</Button>
+              </DialogClose>
+
+              <Button disabled={isPending} type="submit">
+                {isPending ? (
+                  <Loader2Icon className="size-4 animate-spin" />
+                ) : defaultValues ? (
+                  "Lưu"
+                ) : (
+                  "Tạo"
+                )}
+              </Button>
+            </div>
+          </form>
+        </Form>
+      </DialogContent>
+    </Dialog>
+  );
+};
+
+export default FolderDialog;

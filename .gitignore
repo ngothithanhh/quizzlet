@@ -44,3 +44,17 @@ build/
 *.class
 *.jar
 *.war
+
+### Frontend dependencies and build output ###
+node_modules/
+.pnp
+.pnp.js
+.next/
+out/
+dist/
+.nitro/
+.output/
+.vercel/
+.turbo/
+.cache/
+coverage/
