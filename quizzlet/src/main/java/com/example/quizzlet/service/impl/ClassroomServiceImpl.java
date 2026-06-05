@@ -7,6 +7,7 @@ import com.example.quizzlet.dto.classroom.ClassroomResponse;
 import com.example.quizzlet.dto.study.StudySetResponse;
 import com.example.quizzlet.entity.*;
 import com.example.quizzlet.enums.ClassRole;
+import com.example.quizzlet.enums.NotificationType;
 import com.example.quizzlet.mapper.ClassMemberMapper;
 import com.example.quizzlet.mapper.ClassroomMapper;
 import com.example.quizzlet.mapper.StudySetMapper;
@@ -15,6 +16,7 @@ import com.example.quizzlet.repository.ClassroomRepository;
 import com.example.quizzlet.repository.StudySetRepository;
 import com.example.quizzlet.repository.UserRepository;
 import com.example.quizzlet.service.ClassroomService;
+import com.example.quizzlet.service.NotificationService;
 import com.example.quizzlet.ultils.SecurityUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -34,6 +36,7 @@ public class ClassroomServiceImpl implements ClassroomService {
     private final ClassroomRepository classroomRepository;
     private final ClassMemberRepository memberRepository;
     private final StudySetRepository studySetRepository;
+    private final NotificationService notificationService;
 
     //tao
     @Transactional
@@ -152,6 +155,27 @@ public class ClassroomServiceImpl implements ClassroomService {
         memberRepository.save(member);
 
         //Thông báo tới chủ phòng và giáo viên
+        notificationService.createNotification(
+                classroom.getOwner().getId(),
+                "Thành viên mới",
+                userRepository.findById(userId).get().getUsername() + "đã tham gia lớp " + classroom.getName(),
+                NotificationType.NEW_MEMBER,
+                classroom.getId(),
+                "Classroom"
+                );
+
+        for(ClassMember m : classroom.getMembers()){
+            if(m.getRole() == ClassRole.TEACHER && m.getUser() != null){
+                notificationService.createNotification(
+                        m.getUser().getId(),
+                        "Thành viên mới",
+                        userRepository.findById(userId).get().getUsername() + " đã tham gia lớp " + classroom.getName(),
+                        NotificationType.NEW_MEMBER,
+                        classroom.getId(),
+                        "Classroom"
+                );
+            }
+        }
 
         return "Tham gia lớp học thành công!";
 
@@ -164,11 +188,35 @@ public class ClassroomServiceImpl implements ClassroomService {
 
         ClassMember member = memberRepository.findByClassroomIdAndUserId(classId,userId).orElseThrow(()->new RuntimeException("Bạn không phải là thành viên của lớp!"));
 
+        Classroom classroom = classroomRepository.findById(classId).orElseThrow(()->new RuntimeException("Không tìm thấy lớp học!"));
+
         if(member.getRole()==ClassRole.OWNER) throw new RuntimeException("Bạn không thể rời lớp!");
 
         memberRepository.delete(member);
 
-        //thong bao roi
+        //Thông báo tới chủ phòng và giáo viên
+        notificationService.createNotification(
+                classroom.getOwner().getId(),
+                "Thành viên rời khỏi lớp",
+                userRepository.findById(userId).get().getUsername() + "đã rời khỏi lớp " + classroom.getName(),
+                NotificationType.NEW_MEMBER,
+                classroom.getId(),
+                "Classroom"
+        );
+
+        for(ClassMember m : classroom.getMembers()){
+            if(m.getRole() == ClassRole.TEACHER && m.getUser() != null){
+                notificationService.createNotification(
+                        m.getUser().getId(),
+                        "Thành viên rời khỏi lớp",
+                        userRepository.findById(userId).get().getUsername() + " đã rời khỏi lớp " + classroom.getName(),
+                        NotificationType.NEW_MEMBER,
+                        classroom.getId(),
+                        "Classroom"
+                );
+            }
+        }
+
 
         return "Rời lớp thành công!";
 
@@ -213,6 +261,28 @@ public class ClassroomServiceImpl implements ClassroomService {
         memberRepository.save(classMember);
 
         //thong bao co loi moi tham gia lop hoc
+        Classroom classroom = classroomRepository.findById(classId).orElseThrow(()->new RuntimeException("Không tìm thấy lớp!"));
+        notificationService.createNotification(
+                request.getUserId(),
+                "Lời mời tham gia lớp học",
+                "Bạn được thêm vào lớp " + classroom.getName(),
+                NotificationType.CLASS_INVITE,
+                classroom.getId(),
+                "Classroom"
+        );
+
+        for(ClassMember m : classroom.getMembers()){
+            if(m.getRole() == ClassRole.TEACHER && m.getUser() != null){
+                notificationService.createNotification(
+                        m.getUser().getId(),
+                        "Thành viên mới",
+                        userRepository.findById(request.getUserId()).get().getUsername() + " đã tham gia lớp " + classroom.getName(),
+                        NotificationType.NEW_MEMBER,
+                        classroom.getId(),
+                        "Classroom"
+                );
+            }
+        }
 
         return "Thêm thành viên thành công!";
 
@@ -310,9 +380,6 @@ public class ClassroomServiceImpl implements ClassroomService {
         return "Xóa thành công!";
 
     }
-
-
-
 
     //sinh ma
     private String generateInviteCode(){

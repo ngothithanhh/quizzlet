@@ -8,6 +8,7 @@ import CreateOptionsDropdown from "./create-options-dropdown";
 import MobileMenu from "./mobile-menu";
 import SignInButton from "./sign-in-button";
 import UserDropdown from "./user-dropdown";
+import NotificationDropdown from "./notification-dropdown";
 
 const Navbar = () => {
   const { isLoggedIn, isLoading } = useAuth();
@@ -46,7 +47,8 @@ const Navbar = () => {
         )}
         <CreateOptionsDropdown />
       </div>
-      <div className="flex items-center">
+      <div className="flex items-center gap-2">
+        {isLoggedIn && <NotificationDropdown />}
         {isLoading ? null : isLoggedIn ? <UserDropdown /> : <SignInButton />}
       </div>
     </div>

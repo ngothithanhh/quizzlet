@@ -282,6 +282,23 @@ export interface MatchHistoryResponse {
   completedAt: string;
 }
 
+export interface UserSearchResponse {
+  id: number;
+  username: string;
+  email: string;
+}
+
+export interface NotificationResponse {
+  id: number;
+  title: string;
+  content: string;
+  type: string;
+  isRead: boolean;
+  referenceId: number;
+  referenceType: string;
+  createdAt: string;
+}
+
 // ── Core fetch helper ─────────────────────────────────────────────────────────
 
 async function apiFetch<T>(
@@ -513,7 +530,7 @@ export const authApi = {
 export const classroomApi = {
   /** Tạo lớp học mới */
   create: (data: ClassroomRequest) =>
-    apiFetch<Record<string, any>>("/api/classroom/create", {
+    apiFetch<Record<string, any>>("/api/classroom", {
       method: "POST",
       body: JSON.stringify(data),
     }),
@@ -649,4 +666,41 @@ export const assignmentWorkApi = {
   /** Lấy kết quả làm bài tập của mình */
   getMyResult: (assignmentId: number) =>
     apiFetch<AssignmentSubmissionResponse>(`/api/assignments/${assignmentId}/my-result`),
+};
+
+// ── User API ──────────────────────────────────────────────────────────────────
+
+export const userApi = {
+  /** Tìm kiếm người dùng bằng email hoặc tên */
+  searchUsers: (query: string) =>
+    apiFetch<UserSearchResponse[]>(`/api/users/search?query=${encodeURIComponent(query)}`),
+};
+
+// ── Notification API ──────────────────────────────────────────────────────────
+
+export const notificationApi = {
+  getMyNotifications: () =>
+    apiFetch<NotificationResponse[]>("/api/notifications"),
+
+  markAsRead: (id: number) =>
+    apiFetch<void>(`/api/notifications/${id}/read`, { method: "PUT" }),
+
+  markAllAsRead: () =>
+    apiFetch<void>("/api/notifications/read-all", { method: "PUT" }),
+
+  getUnreadCount: () =>
+    apiFetch<number>("/api/notifications/unread-count"),
+};
+
+// ── Favorite API ──────────────────────────────────────────────────────────────
+
+export const favoriteApi = {
+  add: (studySetId: number) =>
+    apiFetch<string>(`/api/favorites/${studySetId}`, { method: "POST" }),
+
+  remove: (studySetId: number) =>
+    apiFetch<string>(`/api/favorites/${studySetId}`, { method: "DELETE" }),
+
+  getMyFavorites: () =>
+    apiFetch<StudySetResponse[]>("/api/favorites/get-my-farvorites"),
 };

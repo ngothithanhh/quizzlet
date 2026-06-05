@@ -24,12 +24,8 @@ import type { FlashcardResponse } from "~/lib/api-client";
 import { flashcardApi } from "~/lib/api-client";
 import { useAuth } from "~/contexts/auth-context";
 import { useStudySet, useMyStudySets } from "~/hooks/use-study-sets";
-import {
-  useCreateFlashcard,
-  useDeleteFlashcard,
-  useUpdateFlashcard,
-} from "~/hooks/use-flashcards";
-import { useDeleteStudySet, useSetVisibility } from "~/hooks/use-study-sets";
+import { useCreateFlashcard, useDeleteFlashcard, useUpdateFlashcard } from "~/hooks/use-flashcards";
+import { useDeleteStudySet, useSetVisibility, useFavorites } from "~/hooks/use-study-sets";
 import { useRouter } from "next/navigation";
 import FlashcardMode from "~/components/flashcards-mode/flashcard-mode";
 
@@ -276,9 +272,12 @@ export default function StudySetDetailSB({ studySetId }: { studySetId: number })
   const { mutate: deleteSet, isPending: isDeleting } = useDeleteStudySet();
   const { mutate: setVisibility, isPending: isTogglingVisibility } = useSetVisibility();
   const { data: mySets } = useMyStudySets();
+  const { data: myFavorites, toggleFavorite } = useFavorites();
   const router = useRouter();
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [activeTab, setActiveTab] = useState<ActiveTab>("flashcards");
+
+  const isFavorited = myFavorites.some(set => set.id === studySetId);
 
   // ── Loading skeleton ──
   if (isLoading) {
@@ -341,10 +340,13 @@ export default function StudySetDetailSB({ studySetId }: { studySetId: number })
                 : <><EyeOff size={11} /> Riêng tư</>}
             </span>
             <span>·</span>
-            <span className="flex items-center gap-1.5">
-              <Star size={11} className="text-amber-400" />
+            <button 
+              onClick={() => toggleFavorite(studySet.id, isFavorited)}
+              className="flex items-center gap-1.5 transition hover:text-foreground"
+            >
+              <Star size={12} className={isFavorited ? "text-amber-400 fill-amber-400" : ""} />
               <span>{studySet.favoriteCount} yêu thích</span>
-            </span>
+            </button>
             <span>·</span>
             <span className="flex items-center gap-1.5">
               <Layers size={11} />

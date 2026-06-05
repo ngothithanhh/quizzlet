@@ -4,5 +4,6 @@ public enum NotificationType {
     CLASS_INVITE,
     NEW_ASSIGNMENT,
     SUBMISSION,
-    SYSTEM
+    SYSTEM,
+    NEW_MEMBER
 }

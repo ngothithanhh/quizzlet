@@ -4,9 +4,11 @@ import com.example.quizzlet.dto.assignment.AssignmentRequest;
 import com.example.quizzlet.dto.assignment.AssignmentResponse;
 import com.example.quizzlet.entity.*;
 import com.example.quizzlet.enums.ClassRole;
+import com.example.quizzlet.enums.NotificationType;
 import com.example.quizzlet.mapper.AssignmentMapper;
 import com.example.quizzlet.repository.*;
 import com.example.quizzlet.service.AssignmentService;
+import com.example.quizzlet.service.NotificationService;
 import com.example.quizzlet.ultils.SecurityUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -24,6 +26,7 @@ public class AssignmentServiceImpl implements AssignmentService {
     private final TestRepository testRepository;
     private final AssignmentRepository assignmentRepository;
     private final AssignmentSubmissionRepository assignmentSubmissionRepository;
+    private final NotificationService notificationService;
 
     @Override
     public AssignmentResponse createAssignment(Long classId, AssignmentRequest request){
@@ -52,6 +55,18 @@ public class AssignmentServiceImpl implements AssignmentService {
                 .maxAttempt(request.getMaxAttempt())
                 .build();
 
+        for (ClassMember m : classroom.getMembers()){
+            if(!m.getUser().getId().equals(userId)){
+                notificationService.createNotification(
+                        m.getUser().getId(),
+                        "Bài tập mới: " + request.getTitle(),
+                        "Lớp " + classroom.getName() + " vừa có bài tập mới.",
+                        NotificationType.NEW_ASSIGNMENT,
+                        assignment.getId(),
+                        "ASSIGNMENT"
+                );
+            }
+        }
 
         return AssignmentMapper.toResponse(assignmentRepository.save(assignment));
     }
