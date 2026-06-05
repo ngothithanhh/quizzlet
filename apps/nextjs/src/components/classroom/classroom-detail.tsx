@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
@@ -38,7 +38,7 @@ import {
   useCreateAssignment,
 } from "~/hooks/use-classrooms";
 import { useMyStudySets } from "~/hooks/use-study-sets";
-import { testApi } from "~/lib/api-client";
+import { testApi, userApi, type UserSearchResponse } from "~/lib/api-client";
 
 interface Props {
   classId: number;
@@ -334,12 +334,12 @@ function MembersTab({ classId, isOwner, onAdd, currentUserId }: { classId: numbe
                       disabled={isUpdating}
                       className="bg-transparent border border-border rounded px-2 py-1"
                     >
-                      <option value="MEMBER">Thành viên</option>
-                      <option value="ADMIN">Quản trị viên</option>
+                      <option value="STUDENT">Thành viên</option>
+                      <option value="TEACHER">Giáo viên</option>
                     </select>
                   ) : (
                     <span className={`px-2 py-1 rounded-md ${member.role === 'OWNER' ? 'bg-primary/10 text-primary' : 'bg-muted text-muted-foreground'}`}>
-                      {member.role === 'OWNER' ? 'Chủ sở hữu' : member.role === 'ADMIN' ? 'Quản trị viên' : 'Thành viên'}
+                      {member.role === 'OWNER' ? 'Chủ sở hữu' : member.role === 'TEACHER' ? 'Giáo viên' : 'Thành viên'}
                     </span>
                   )}
                 </div>
@@ -577,19 +577,56 @@ function AddStudySetModal({ isOpen, onClose, classId, onSuccess }: any) {
 }
 
 function AddMemberModal({ isOpen, onClose, classId }: any) {
-  const [userId, setUserId] = useState("");
-  const [role, setRole] = useState("MEMBER");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState<UserSearchResponse[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const [selectedUser, setSelectedUser] = useState<UserSearchResponse | null>(null);
+  const [hasSearched, setHasSearched] = useState(false);
+  
+  const [role, setRole] = useState("STUDENT");
   const { mutate: addMember, isPending } = useAddMember();
-  const { refetch } = useClassMembers(classId);
+  const { data: members, refetch } = useClassMembers(classId);
+
+  useEffect(() => {
+    if (!isOpen) {
+      setSearchQuery("");
+      setSearchResults([]);
+      setSelectedUser(null);
+      setHasSearched(false);
+    }
+  }, [isOpen]);
+
+  useEffect(() => {
+    const delayDebounceFn = setTimeout(async () => {
+      if (searchQuery.trim().length > 0) {
+        setIsSearching(true);
+        try {
+          const results = await userApi.searchUsers(searchQuery);
+          // Filter out users who are already members
+          const existingIds = new Set(members?.map(m => m.userId) || []);
+          setSearchResults(results.filter(u => !existingIds.has(u.id)));
+          setHasSearched(true);
+        } catch (err) {
+          console.error(err);
+        } finally {
+          setIsSearching(false);
+        }
+      } else {
+        setSearchResults([]);
+        setHasSearched(false);
+      }
+    }, 400);
+
+    return () => clearTimeout(delayDebounceFn);
+  }, [searchQuery, members]);
 
   if (!isOpen) return null;
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!userId.trim() || isNaN(Number(userId))) return;
+  const handleAdd = () => {
+    if (!selectedUser) return;
     addMember(
-      { classId, data: { userId: Number(userId), role } },
-      { onSuccess: () => { refetch(); onClose(); setUserId(""); } }
+      { classId, data: { userId: selectedUser.id, role } },
+      { onSuccess: () => { refetch(); onClose(); setSelectedUser(null); setSearchQuery(""); setSearchResults([]); } }
     );
   };
 
@@ -597,25 +634,62 @@ function AddMemberModal({ isOpen, onClose, classId }: any) {
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm">
       <div className="w-full max-w-md rounded-2xl border border-border bg-card p-6 shadow-lg">
         <h2 className="mb-4 text-xl font-bold">Thêm thành viên mới</h2>
-        <form onSubmit={handleSubmit}>
-          <div className="mb-4">
-            <label className="mb-1 block text-sm font-medium">User ID</label>
-            <input type="number" value={userId} onChange={(e) => setUserId(e.target.value)} className="w-full rounded-xl border border-input bg-background px-4 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-primary" placeholder="Nhập User ID (VD: 5)" required disabled={isPending} />
+        
+        {!selectedUser ? (
+          <div>
+            <div className="mb-4 relative">
+              <input 
+                type="text" 
+                value={searchQuery} 
+                onChange={(e) => setSearchQuery(e.target.value)} 
+                className="w-full rounded-xl border border-input bg-background px-4 py-2 pr-10 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-primary" 
+                placeholder="Nhập tên hoặc email để tìm..." 
+              />
+              {isSearching && (
+                <Loader2 size={16} className="absolute right-3 top-1/2 -translate-y-1/2 animate-spin text-muted-foreground" />
+              )}
+            </div>
+
+            {searchResults.length > 0 && (
+              <div className="max-h-[200px] overflow-y-auto border border-border rounded-xl divide-y divide-border mb-4">
+                {searchResults.map(user => (
+                  <div key={user.id} className="p-3 hover:bg-muted/50 flex items-center justify-between cursor-pointer" onClick={() => setSelectedUser(user)}>
+                    <div>
+                      <p className="font-medium text-sm">{user.username}</p>
+                      <p className="text-xs text-muted-foreground">{user.email}</p>
+                    </div>
+                    <button className="text-xs bg-primary/10 text-primary px-2 py-1 rounded">Chọn</button>
+                  </div>
+                ))}
+              </div>
+            )}
+            {searchResults.length === 0 && hasSearched && !isSearching && (
+              <div className="mb-4 p-4 text-center text-sm text-muted-foreground border border-border rounded-xl">Không tìm thấy kết quả (hoặc người dùng đã có trong lớp).</div>
+            )}
           </div>
-          <div className="mb-6">
-            <label className="mb-1 block text-sm font-medium">Vai trò</label>
-            <select value={role} onChange={(e) => setRole(e.target.value)} className="w-full rounded-xl border border-input bg-background px-4 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-primary" disabled={isPending}>
-              <option value="MEMBER">Thành viên</option>
-              <option value="ADMIN">Quản trị viên</option>
-            </select>
+        ) : (
+          <div className="mb-4 p-4 border border-primary/20 bg-primary/5 rounded-xl flex items-center justify-between">
+             <div>
+                <p className="font-medium text-sm">{selectedUser.username}</p>
+                <p className="text-xs text-muted-foreground">{selectedUser.email}</p>
+             </div>
+             <button onClick={() => setSelectedUser(null)} className="text-xs text-muted-foreground hover:text-foreground">Đổi</button>
           </div>
-          <div className="flex justify-end gap-3">
-            <button type="button" onClick={onClose} className="rounded-xl px-4 py-2 text-sm font-medium transition hover:bg-muted" disabled={isPending}>Hủy</button>
-            <button type="submit" className="inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground shadow transition hover:bg-primary/90" disabled={isPending || !userId.trim()}>
-              {isPending && <Loader2 size={16} className="animate-spin" />} Thêm
-            </button>
-          </div>
-        </form>
+        )}
+
+        <div className="mb-6">
+          <label className="mb-1 block text-sm font-medium">Vai trò</label>
+          <select value={role} onChange={(e) => setRole(e.target.value)} className="w-full rounded-xl border border-input bg-background px-4 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-primary" disabled={isPending}>
+            <option value="STUDENT">Thành viên</option>
+            <option value="TEACHER">Giáo viên</option>
+          </select>
+        </div>
+        <div className="flex justify-end gap-3">
+          <button type="button" onClick={onClose} className="rounded-xl px-4 py-2 text-sm font-medium transition hover:bg-muted" disabled={isPending}>Hủy</button>
+          <button onClick={handleAdd} className="inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground shadow transition hover:bg-primary/90" disabled={isPending || !selectedUser}>
+            {isPending && <Loader2 size={16} className="animate-spin" />} Thêm
+          </button>
+        </div>
       </div>
     </div>
   );

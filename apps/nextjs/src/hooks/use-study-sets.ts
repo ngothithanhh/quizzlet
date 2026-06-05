@@ -11,7 +11,7 @@ import type {
   StudySetResponse,
   StudySetSimpleResponse,
 } from "~/lib/api-client";
-import { studySetApi } from "~/lib/api-client";
+import { studySetApi, favoriteApi } from "~/lib/api-client";
 
 // ── useMyStudySets ────────────────────────────────────────────────────────────
 
@@ -222,4 +222,45 @@ export function useSetVisibility() {
   );
 
   return { mutate, isPending };
+}
+
+// ── useFavorites ──────────────────────────────────────────────────────────────
+
+export function useFavorites() {
+  const [data, setData] = useState<StudySetResponse[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetch = useCallback(async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const result = await favoriteApi.getMyFavorites();
+      setData(result);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Unknown error");
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    void fetch();
+  }, [fetch]);
+
+  const toggleFavorite = async (studySetId: number, isFavorited: boolean) => {
+    try {
+      if (isFavorited) {
+        await favoriteApi.remove(studySetId);
+        setData(prev => prev.filter(s => s.id !== studySetId));
+      } else {
+        await favoriteApi.add(studySetId);
+        void fetch(); // Refetch to get full details, or we can just assume
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  return { data, isLoading, error, refetch: fetch, toggleFavorite };
 }
