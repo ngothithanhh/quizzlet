@@ -1,0 +1,131 @@
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { Loader2Icon, MinusIcon, PlusIcon } from "lucide-react";
+
+import { Button } from "@acme/ui/button";
+import { Card, CardContent } from "@acme/ui/card";
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@acme/ui/dialog";
+import { toast } from "@acme/ui/toast";
+
+import { api } from "~/trpc/react";
+
+interface StudySetCombineCardProps {
+  title: string;
+  selected: boolean;
+  onClick: () => void;
+}
+
+const StudySetCombineCard = ({
+  title,
+  selected,
+  onClick,
+}: StudySetCombineCardProps) => {
+  return (
+    <Card onClick={onClick}>
+      <CardContent className="p-4">
+        <div className="flex items-center justify-between">
+          <span>{title}</span>
+          <Button size="icon" variant={selected ? "primary" : "outline"}>
+            {selected ? <MinusIcon size={20} /> : <PlusIcon size={20} />}
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
+  );
+};
+
+interface StudySetCombineDialogProps {
+  id: string;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  userId: string;
+}
+
+const StudySetCombineDialog = ({
+  open,
+  onOpenChange,
+  userId,
+  id,
+}: StudySetCombineDialogProps) => {
+  const utils = api.useUtils();
+  const studySet = utils.studySet.byId.getData({ id });
+  const [studySets] = api.studySet.allByUser.useSuspenseQuery({
+    userId,
+  });
+  const router = useRouter();
+  const { mutate, isPending } = api.studySet.combine.useMutation({
+    async onSuccess(data) {
+      router.push(`/study-sets/${data.id}`);
+      toast.success("Đã kết hợp học phần thành công");
+      onOpenChange(false);
+      await utils.studySet.invalidate();
+    },
+    onError() {
+      toast.error("Không thể kết hợp học phần");
+    },
+  });
+  const [selected, setSelected] = useState<string[]>([]);
+
+  const toggleCard = (id: string) => {
+    setSelected((prev) => {
+      if (prev.includes(id)) {
+        return prev.filter((item) => item !== id);
+      } else {
+        return [...prev, id];
+      }
+    });
+  };
+
+  const combine = () => {
+    mutate({ id, studySets: selected });
+  };
+
+  const isDisabled = isPending || selected.length === 0;
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Kết hợp học phần</DialogTitle>
+          <DialogDescription>
+            Chọn học phần bạn muốn kết hợp với {studySet?.title}
+          </DialogDescription>
+        </DialogHeader>
+        <div className="flex flex-col gap-4">
+          {studySets
+            .filter((studySet) => studySet.id !== id)
+            .map((studySet) => (
+              <StudySetCombineCard
+                key={studySet.id}
+                onClick={() => toggleCard(studySet.id)}
+                selected={selected.includes(studySet.id)}
+                title={studySet.title}
+              />
+            ))}
+        </div>
+        <DialogFooter>
+          <DialogClose asChild disabled={isPending}>
+            <Button variant="outline">Đóng</Button>
+          </DialogClose>
+          <Button onClick={combine} disabled={isDisabled}>
+            {isPending ? (
+              <Loader2Icon className="size-4 animate-spin" />
+            ) : (
+              "Kết hợp"
+            )}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+};
+
+export default StudySetCombineDialog;
