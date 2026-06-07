@@ -1,6 +1,6 @@
 "use client";
 
-import { Star } from "lucide-react";
+import { Star, Volume2 } from "lucide-react";
 
 import type { RouterOutputs } from "@acme/api";
 import { Button } from "@acme/ui/button";
@@ -25,6 +25,17 @@ const FlashcardCard = ({
   const { toggleStar } = useStar(flashcard);
   const { onOpenChange } = useSignInDialogContext();
   const { isLoggedIn } = useAuth();
+
+  const fData = flashcard as any;
+  const mediaList = fData.mediaList || [];
+  const termImage = mediaList.find((m: any) => m.side === "TERM" && m.type === "IMAGE");
+  const termAudio = mediaList.find((m: any) => m.side === "TERM" && m.type === "AUDIO");
+  const defImage = mediaList.find((m: any) => m.side === "DEFINITION" && m.type === "IMAGE");
+  const defAudio = mediaList.find((m: any) => m.side === "DEFINITION" && m.type === "AUDIO");
+
+  const playAudio = (url: string) => {
+    new Audio(url).play().catch(console.error);
+  };
 
   const onStarClick = () => {
     if (isLoggedIn) {
@@ -51,12 +62,36 @@ const FlashcardCard = ({
             />
           </Button>
         </div>
-        <div className="whitespace-pre-line sm:flex-1">{term}</div>
+        <div className="sm:flex-1">
+          <div className="flex items-start justify-between">
+            <div className="whitespace-pre-line">{term}</div>
+            {termAudio && (
+              <button onClick={() => playAudio(termAudio.url)} className="ml-2 text-muted-foreground hover:text-foreground">
+                <Volume2 size={16} />
+              </button>
+            )}
+          </div>
+          {termImage && (
+            <img src={termImage.url} alt="Term" className="mt-2 max-h-20 rounded-md object-contain" />
+          )}
+        </div>
         <Separator className="my-2 sm:hidden" />
         <div className="mx-4 hidden sm:block">
           <Separator orientation="vertical" />
         </div>
-        <div className="whitespace-pre-line sm:flex-1">{definition}</div>
+        <div className="sm:flex-1">
+          <div className="flex items-start justify-between">
+            <div className="whitespace-pre-line">{definition}</div>
+            {defAudio && (
+              <button onClick={() => playAudio(defAudio.url)} className="ml-2 text-muted-foreground hover:text-foreground">
+                <Volume2 size={16} />
+              </button>
+            )}
+          </div>
+          {defImage && (
+            <img src={defImage.url} alt="Definition" className="mt-2 max-h-20 rounded-md object-contain" />
+          )}
+        </div>
       </CardContent>
     </Card>
   );

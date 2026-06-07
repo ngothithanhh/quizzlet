@@ -17,7 +17,9 @@ import {
 import { useAuth } from "~/contexts/auth-context";
 import { useMyStudySets } from "~/hooks/use-study-sets";
 import { useTestHistory, useLearnHistory, useMatchHistory } from "~/hooks/use-history";
+import { useMyProfile } from "~/hooks/use-user";
 import ChangePasswordForm from "~/components/profile/change-password-form";
+import UpdateProfileForm from "~/components/profile/update-profile-form";
 
 type Tab = "overview" | "sets" | "history" | "settings";
 
@@ -44,6 +46,7 @@ function StatCard({
 export default function ProfileView() {
   const [activeTab, setActiveTab] = useState<Tab>("overview");
   const { user } = useAuth();
+  const { data: profile } = useMyProfile();
 
   const { data: mySets, isLoading: isSetsLoading } = useMyStudySets();
   const { data: testHistory } = useTestHistory();
@@ -64,7 +67,8 @@ export default function ProfileView() {
     );
   }
 
-  const initials = (user.username ?? user.email).charAt(0).toUpperCase();
+  const username = profile?.username ?? user.username ?? user.email;
+  const initials = username.charAt(0).toUpperCase();
 
   const tabs: { key: Tab; label: string; icon: React.ReactNode }[] = [
     { key: "overview", label: "Tổng quan", icon: <User size={16} /> },
@@ -78,15 +82,23 @@ export default function ProfileView() {
       {/* ── Profile Hero ────────────────────────────────── */}
       <div className="mb-8 flex flex-col items-center gap-4 rounded-2xl border bg-card p-6 shadow-sm sm:flex-row sm:gap-6">
         {/* Avatar */}
-        <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-violet-500 to-indigo-500 text-3xl font-bold text-white shadow-md">
-          {initials}
-        </div>
+        {profile?.avatarUrl ? (
+          <img
+            src={profile.avatarUrl}
+            alt="Avatar"
+            className="flex h-20 w-20 shrink-0 items-center justify-center rounded-full object-cover shadow-md"
+          />
+        ) : (
+          <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-violet-500 to-indigo-500 text-3xl font-bold text-white shadow-md">
+            {initials}
+          </div>
+        )}
         {/* Info */}
         <div className="flex-1 text-center sm:text-left">
           <h1 className="text-2xl font-bold text-foreground">
-            {user.username ?? user.email}
+            {username}
           </h1>
-          <p className="text-sm text-muted-foreground">{user.email}</p>
+          <p className="text-sm text-muted-foreground">{profile?.email ?? user.email}</p>
         </div>
         {/* Quick stats */}
         <div className="flex gap-4">
@@ -308,6 +320,7 @@ export default function ProfileView() {
       {/* Settings */}
       {activeTab === "settings" && (
         <div className="max-w-lg">
+          <UpdateProfileForm />
           <ChangePasswordForm />
         </div>
       )}

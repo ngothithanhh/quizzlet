@@ -14,8 +14,12 @@ import {
 } from "lucide-react";
 
 import type { StudySetSimpleResponse } from "~/lib/api-client";
+import { favoriteApi } from "~/lib/api-client";
 import { useAuth } from "~/contexts/auth-context";
 import { useMyStudySets, useDeleteStudySet } from "~/hooks/use-study-sets";
+import { FavoriteButton } from "../shared/favorite-button";
+import { useQuery } from "@tanstack/react-query";
+import SharedStudySetCard from "../shared/study-set-card";
 
 // ── Skeleton card ─────────────────────────────────────────────────────────────
 
@@ -53,8 +57,9 @@ function StudySetCard({ studySet, onDelete, isDeleting }: CardProps) {
       />
 
       <div className="relative z-10">
+        <FavoriteButton studySetId={studySet.id} />
         {/* Title */}
-        <h3 className="mb-1 line-clamp-2 font-semibold text-foreground">
+        <h3 className="mb-1 line-clamp-2 font-semibold text-foreground pr-6">
           {studySet.title}
         </h3>
 
@@ -150,17 +155,30 @@ function StudySetCard({ studySet, onDelete, isDeleting }: CardProps) {
 
 export default function MyStudySets() {
   const { isLoggedIn, user } = useAuth();
-  const { data: studySets, isLoading, error, refetch } = useMyStudySets();
+  const [activeTab, setActiveTab] = useState<"created" | "favorites">("created");
+  
+  // Queries
+  const { data: createdSets = [], isLoading: isLoadingCreated, error: createdError, refetch: refetchCreated } = useMyStudySets();
+  const { data: favoriteSets = [], isLoading: isLoadingFavorites, error: favoriteError } = useQuery({
+    queryKey: ["my-favorites"],
+    queryFn: () => favoriteApi.getMyFavorites(),
+    enabled: isLoggedIn,
+  });
+
   const { mutate: deleteSet, isPending: isDeleting } = useDeleteStudySet();
   const [search, setSearch] = useState("");
 
-  const filtered = studySets.filter((s) =>
+  const currentSets = activeTab === "created" ? createdSets : favoriteSets;
+  const isLoading = activeTab === "created" ? isLoadingCreated : isLoadingFavorites;
+  const error = activeTab === "created" ? createdError : favoriteError;
+
+  const filtered = currentSets.filter((s) =>
     s.title.toLowerCase().includes(search.toLowerCase()),
   );
 
   const handleDelete = (id: number) => {
     void deleteSet(id, {
-      onSuccess: () => void refetch(),
+      onSuccess: () => void refetchCreated(),
     });
   };
 
@@ -209,6 +227,22 @@ export default function MyStudySets() {
           onChange={(e) => setSearch(e.target.value)}
           className="w-full rounded-xl border border-input bg-background pl-9 pr-4 py-2.5 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-primary"
         />
+      </div>
+
+      {/* Tabs */}
+      <div className="flex border-b border-border mb-6 gap-8">
+        <button 
+          onClick={() => setActiveTab("created")} 
+          className={`pb-3 border-b-2 font-medium text-sm transition-colors ${activeTab === "created" ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground"}`}
+        >
+          Đã tạo ({createdSets.length})
+        </button>
+        <button 
+          onClick={() => setActiveTab("favorites")} 
+          className={`pb-3 border-b-2 font-medium text-sm transition-colors ${activeTab === "favorites" ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground"}`}
+        >
+          Yêu thích ({favoriteSets.length})
+        </button>
       </div>
 
       {/* States */}
@@ -261,12 +295,19 @@ export default function MyStudySets() {
       {!isLoading && filtered.length > 0 && (
         <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3">
           {filtered.map((studySet) => (
-            <StudySetCard
-              key={studySet.id}
-              studySet={studySet}
-              onDelete={handleDelete}
-              isDeleting={isDeleting}
-            />
+            activeTab === "created" ? (
+              <StudySetCard
+                key={studySet.id}
+                studySet={studySet}
+                onDelete={handleDelete}
+                isDeleting={isDeleting}
+              />
+            ) : (
+              <SharedStudySetCard
+                key={studySet.id}
+                studySet={studySet}
+              />
+            )
           ))}
         </div>
       )}

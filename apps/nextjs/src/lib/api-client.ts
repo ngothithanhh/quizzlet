@@ -336,7 +336,12 @@ async function apiFetch<T>(
     return undefined as T;
   }
 
-  return response.json() as Promise<T>;
+  const contentType = response.headers.get("content-type");
+  if (contentType && contentType.includes("application/json")) {
+    return response.json() as Promise<T>;
+  } else {
+    return response.text() as unknown as Promise<T>;
+  }
 }
 
 // ── Study Set API ─────────────────────────────────────────────────────────────
@@ -668,12 +673,40 @@ export const assignmentWorkApi = {
     apiFetch<AssignmentSubmissionResponse>(`/api/assignments/${assignmentId}/my-result`),
 };
 
-// ── User API ──────────────────────────────────────────────────────────────────
+export interface UserProfileResponse {
+  id: number;
+  username: string;
+  email: string;
+  avatarUrl?: string;
+  isVerified: boolean;
+}
+
+export interface UserProfileUpdateRequest {
+  username: string;
+  avatarUrl?: string;
+}
 
 export const userApi = {
+  /** Lấy thông tin cá nhân */
+  getMyProfile: () =>
+    apiFetch<UserProfileResponse>("/api/users/me"),
+
+  /** Cập nhật thông tin cá nhân */
+  updateMyProfile: (data: UserProfileUpdateRequest) =>
+    apiFetch<UserProfileResponse>("/api/users/me", {
+      method: "PUT",
+      body: JSON.stringify(data),
+    }),
+
   /** Tìm kiếm người dùng bằng email hoặc tên */
   searchUsers: (query: string) =>
     apiFetch<UserSearchResponse[]>(`/api/users/search?query=${encodeURIComponent(query)}`),
+
+  /** Xoá tài khoản người dùng */
+  deleteUser: (id: number) =>
+    apiFetch<void>(`/api/users/${id}`, {
+      method: "DELETE",
+    }),
 };
 
 // ── Notification API ──────────────────────────────────────────────────────────
@@ -704,3 +737,31 @@ export const favoriteApi = {
   getMyFavorites: () =>
     apiFetch<StudySetResponse[]>("/api/favorites/get-my-farvorites"),
 };
+
+// ── Media API ─────────────────────────────────────────────────────────────────
+
+export interface MediaUploadResponse {
+  url: string;
+  type: "IMAGE" | "AUDIO" | "VIDEO";
+}
+
+export const mediaApi = {
+  upload: async (file: File) => {
+    const token = getAccessToken();
+    const formData = new FormData();
+    formData.append("file", file);
+
+    const response = await fetch(`${BACKEND_URL}/api/media/upload`, {
+      method: "POST",
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+      body: formData,
+    });
+
+    if (!response.ok) {
+      throw new Error(`Upload failed: ${response.status}`);
+    }
+
+    return response.json() as Promise<MediaUploadResponse>;
+  },
+};
+

@@ -2,6 +2,7 @@
 
 import type { FlashcardResponse } from "~/lib/api-client";
 import { cn } from "@acme/ui";
+import { Volume2 } from "lucide-react";
 
 interface FlipCardContentProps {
   flashcard: FlashcardResponse;
@@ -11,6 +12,18 @@ interface FlipCardContentProps {
 const FlipCardContent = ({ flashcard, back }: FlipCardContentProps) => {
   const label = back ? "Định nghĩa" : "Thuật ngữ";
   const content = back ? flashcard.definition : flashcard.term;
+  const side = back ? "DEFINITION" : "TERM";
+
+  const imageMedia = flashcard.mediaList?.find(m => m.side === side && m.type === "IMAGE");
+  const audioMedia = flashcard.mediaList?.find(m => m.side === side && m.type === "AUDIO");
+
+  const playAudio = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (audioMedia?.url) {
+      const audio = new Audio(audioMedia.url);
+      audio.play().catch(console.error);
+    }
+  };
 
   return (
     <div
@@ -39,10 +52,29 @@ const FlipCardContent = ({ flashcard, back }: FlipCardContentProps) => {
           >
             {label}
           </span>
+          {audioMedia && (
+            <button
+              onClick={playAudio}
+              className={cn(
+                "rounded-full p-2 transition hover:bg-black/10 dark:hover:bg-white/10",
+                back ? "text-primary-foreground" : "text-muted-foreground hover:text-foreground"
+              )}
+              title="Phát âm thanh"
+            >
+              <Volume2 size={20} />
+            </button>
+          )}
         </div>
 
         {/* Content */}
-        <div className="flex flex-1 items-center justify-center px-4">
+        <div className="flex flex-1 flex-col items-center justify-center px-4 overflow-y-auto">
+          {imageMedia && (
+            <img 
+              src={imageMedia.url} 
+              alt={label} 
+              className="max-h-32 object-contain mb-4 rounded-md shadow-sm" 
+            />
+          )}
           <p
             className={cn(
               "select-none text-center font-bold leading-relaxed",

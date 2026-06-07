@@ -19,6 +19,7 @@ import {
   Calendar,
   Clock,
   MoreVertical,
+  Star,
 } from "lucide-react";
 
 import { useAuth } from "~/contexts/auth-context";
@@ -39,6 +40,7 @@ import {
 } from "~/hooks/use-classrooms";
 import { useMyStudySets } from "~/hooks/use-study-sets";
 import { testApi, userApi, type UserSearchResponse } from "~/lib/api-client";
+import { FavoriteButton } from "../shared/favorite-button";
 
 interface Props {
   classId: number;
@@ -98,6 +100,8 @@ export default function ClassroomDetail({ classId }: Props) {
   }
 
   const isOwner = classroom.currentUserRole === "OWNER";
+  const isTeacher = classroom.currentUserRole === "TEACHER";
+  const canManageClass = isOwner || isTeacher;
 
   return (
     <div className="mx-auto max-w-5xl py-8">
@@ -129,7 +133,7 @@ export default function ClassroomDetail({ classId }: Props) {
           </div>
         </div>
 
-        {isOwner ? (
+        {canManageClass ? (
           <div className="flex flex-col gap-3 rounded-xl border border-border bg-card p-5 shadow-sm md:w-72">
             <h3 className="text-sm font-semibold">Mã mời tham gia</h3>
             <div className="flex items-center justify-between rounded-lg bg-muted px-3 py-2">
@@ -138,15 +142,22 @@ export default function ClassroomDetail({ classId }: Props) {
                 {copied ? <CheckCircle2 size={18} className="text-green-500" /> : <Copy size={18} />}
               </button>
             </div>
-            <div className="mt-2 flex gap-2">
-              <button
-                onClick={() => setIsEditModalOpen(true)}
-                className="flex-1 inline-flex items-center justify-center gap-2 rounded-lg bg-secondary px-3 py-2 text-sm font-medium text-secondary-foreground transition hover:bg-secondary/80"
-              >
-                <Settings size={14} /> Sửa
-              </button>
-              <DeleteClassroomButton classId={classId} />
-            </div>
+            {isOwner && (
+              <div className="mt-2 flex gap-2">
+                <button
+                  onClick={() => setIsEditModalOpen(true)}
+                  className="flex-1 inline-flex items-center justify-center gap-2 rounded-lg bg-secondary px-3 py-2 text-sm font-medium text-secondary-foreground transition hover:bg-secondary/80"
+                >
+                  <Settings size={14} /> Sửa
+                </button>
+                <DeleteClassroomButton classId={classId} />
+              </div>
+            )}
+            {isTeacher && (
+              <div className="mt-2 flex gap-2">
+                <LeaveClassroomButton classId={classId} />
+              </div>
+            )}
           </div>
         ) : (
           <div className="flex flex-col gap-3 md:w-72 items-end">
@@ -180,13 +191,13 @@ export default function ClassroomDetail({ classId }: Props) {
       {/* TAB CONTENT */}
       <div>
         {activeTab === "studysets" && (
-          <StudySetsTab classId={classId} isOwner={isOwner} onAdd={() => setIsAddStudySetModalOpen(true)} />
+          <StudySetsTab classId={classId} canManageClass={canManageClass} onAdd={() => setIsAddStudySetModalOpen(true)} />
         )}
         {activeTab === "members" && (
-          <MembersTab classId={classId} isOwner={isOwner} onAdd={() => setIsAddMemberModalOpen(true)} currentUserId={user?.id} />
+          <MembersTab classId={classId} canManageClass={canManageClass} isOwner={isOwner} onAdd={() => setIsAddMemberModalOpen(true)} currentUserId={user?.id} />
         )}
         {activeTab === "assignments" && (
-          <AssignmentsTab classId={classId} isOwner={isOwner} onAdd={() => setIsCreateAssignmentModalOpen(true)} />
+          <AssignmentsTab classId={classId} canManageClass={canManageClass} onAdd={() => setIsCreateAssignmentModalOpen(true)} />
         )}
       </div>
 
@@ -221,7 +232,7 @@ export default function ClassroomDetail({ classId }: Props) {
 
 // ── Tab Components ──────────────────────────────────────────────────────────
 
-function StudySetsTab({ classId, isOwner, onAdd }: { classId: number, isOwner: boolean, onAdd: () => void }) {
+function StudySetsTab({ classId, canManageClass, onAdd }: { classId: number, canManageClass: boolean, onAdd: () => void }) {
   const { data: studySets, isLoading, error, refetch } = useClassStudySets(classId);
   const { mutate: removeStudySet, isPending } = useRemoveStudySet();
 
@@ -238,7 +249,7 @@ function StudySetsTab({ classId, isOwner, onAdd }: { classId: number, isOwner: b
     <div>
       <div className="mb-4 flex items-center justify-between">
         <h2 className="text-lg font-semibold">Danh sách học phần ({studySets.length})</h2>
-        {isOwner && (
+        {canManageClass && (
           <button onClick={onAdd} className="inline-flex items-center gap-2 rounded-xl bg-primary px-3 py-1.5 text-sm font-medium text-primary-foreground shadow transition hover:bg-primary/90">
             <PlusCircle size={14} /> Thêm học phần
           </button>
@@ -255,17 +266,22 @@ function StudySetsTab({ classId, isOwner, onAdd }: { classId: number, isOwner: b
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {studySets.map(set => (
             <div key={set.id} className="relative rounded-xl border border-border bg-card p-5 shadow-sm hover:shadow-md transition">
+              <FavoriteButton studySetId={set.id} />
               <Link href={`/study-sets/${set.id}`} className="block mb-2">
                 <h3 className="font-semibold hover:text-primary transition">{set.title}</h3>
               </Link>
-              <div className="text-xs text-muted-foreground mb-4">
-                Bởi {set.username} • {set.favoriteCount} ❤️
+              <div className="text-xs text-muted-foreground mb-4 flex items-center gap-2">
+                <span>Bởi {set.username}</span>
+                <span>•</span>
+                <span className="flex items-center gap-1">
+                  <Star size={12} /> {set.favoriteCount}
+                </span>
               </div>
-              {isOwner && (
+              {canManageClass && (
                 <button 
                   onClick={() => handleRemove(set.id)}
                   disabled={isPending}
-                  className="absolute top-4 right-4 text-muted-foreground hover:text-destructive transition"
+                  className="absolute bottom-4 right-4 text-muted-foreground hover:text-destructive transition"
                   title="Xóa khỏi lớp"
                 >
                   <Trash2 size={16} />
@@ -279,7 +295,7 @@ function StudySetsTab({ classId, isOwner, onAdd }: { classId: number, isOwner: b
   );
 }
 
-function MembersTab({ classId, isOwner, onAdd, currentUserId }: { classId: number, isOwner: boolean, onAdd: () => void, currentUserId?: number }) {
+function MembersTab({ classId, canManageClass, isOwner, onAdd, currentUserId }: { classId: number, canManageClass: boolean, isOwner: boolean, onAdd: () => void, currentUserId?: number }) {
   const { data: members, isLoading, error, refetch } = useClassMembers(classId);
   const { mutate: removeMember, isPending: isRemoving } = useRemoveMember();
   const { mutate: updateRole, isPending: isUpdating } = useUpdateMemberRole();
@@ -301,7 +317,7 @@ function MembersTab({ classId, isOwner, onAdd, currentUserId }: { classId: numbe
     <div>
       <div className="mb-4 flex items-center justify-between">
         <h2 className="text-lg font-semibold">Thành viên ({members.length})</h2>
-        {isOwner && (
+        {canManageClass && (
           <button onClick={onAdd} className="inline-flex items-center gap-2 rounded-xl bg-primary px-3 py-1.5 text-sm font-medium text-primary-foreground shadow transition hover:bg-primary/90">
             <UserPlus size={14} /> Thêm thành viên
           </button>
@@ -344,7 +360,7 @@ function MembersTab({ classId, isOwner, onAdd, currentUserId }: { classId: numbe
                   )}
                 </div>
 
-                {isOwner && member.userId !== currentUserId && (
+                {canManageClass && member.userId !== currentUserId && member.role !== 'OWNER' && (
                   <button 
                     onClick={() => handleRemove(member.userId)}
                     disabled={isRemoving}
@@ -363,7 +379,7 @@ function MembersTab({ classId, isOwner, onAdd, currentUserId }: { classId: numbe
   );
 }
 
-function AssignmentsTab({ classId, isOwner, onAdd }: { classId: number, isOwner: boolean, onAdd: () => void }) {
+function AssignmentsTab({ classId, canManageClass, onAdd }: { classId: number, canManageClass: boolean, onAdd: () => void }) {
   const { data: assignments, isLoading, error } = useClassAssignments(classId);
 
   if (isLoading) return <div className="flex justify-center py-8"><Loader2 className="animate-spin text-primary/50" /></div>;
@@ -373,7 +389,7 @@ function AssignmentsTab({ classId, isOwner, onAdd }: { classId: number, isOwner:
     <div>
       <div className="mb-4 flex items-center justify-between">
         <h2 className="text-lg font-semibold">Bài tập ({assignments.length})</h2>
-        {isOwner && (
+        {canManageClass && (
           <button onClick={onAdd} className="inline-flex items-center gap-2 rounded-xl bg-primary px-3 py-1.5 text-sm font-medium text-primary-foreground shadow transition hover:bg-primary/90">
             <PlusCircle size={14} /> Tạo bài tập
           </button>

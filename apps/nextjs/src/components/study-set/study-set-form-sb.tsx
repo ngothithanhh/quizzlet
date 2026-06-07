@@ -11,6 +11,9 @@ import {
   Trash2Icon,
   Download,
   Upload,
+  Image as ImageIcon,
+  Mic,
+  Volume2,
 } from "lucide-react";
 
 import type {
@@ -29,6 +32,11 @@ interface FlashcardField {
   term: string;
   definition: string;
   position: number;
+  termImage?: string;
+  termAudio?: string;
+  defImage?: string;
+  defAudio?: string;
+  isUploading?: boolean;
 }
 
 interface StudySetFormSBProps {
@@ -62,13 +70,23 @@ export default function StudySetFormSB({ defaultValues }: StudySetFormSBProps) {
   const [isPublic, setIsPublic] = useState(defaultValues?.isPublic ?? true);
   const [flashcards, setFlashcards] = useState<FlashcardField[]>(() => {
     if (defaultValues?.flashcards?.length) {
-      return defaultValues.flashcards.map((f) => ({
-        localId: genId(),
-        id: f.id,
-        term: f.term,
-        definition: f.definition,
-        position: f.position,
-      }));
+      return defaultValues.flashcards.map((f) => {
+        const termImage = f.mediaList?.find(m => m.type === "IMAGE" && m.side === "TERM")?.url;
+        const termAudio = f.mediaList?.find(m => m.type === "AUDIO" && m.side === "TERM")?.url;
+        const defImage = f.mediaList?.find(m => m.type === "IMAGE" && m.side === "DEFINITION")?.url;
+        const defAudio = f.mediaList?.find(m => m.type === "AUDIO" && m.side === "DEFINITION")?.url;
+        return {
+          localId: genId(),
+          id: f.id,
+          term: f.term,
+          definition: f.definition,
+          position: f.position,
+          termImage,
+          termAudio,
+          defImage,
+          defAudio,
+        };
+      });
     }
     return Array.from({ length: INITIAL_COUNT }, (_, i) => makeEmpty(i));
   });
@@ -94,8 +112,8 @@ export default function StudySetFormSB({ defaultValues }: StudySetFormSBProps) {
   const validate = () => {
     const errs: Record<string, string> = {};
     if (!title.trim()) errs.title = "Tiêu đề không được để trống";
-    const hasContent = flashcards.some((f) => f.term.trim() || f.definition.trim());
-    if (!hasContent) errs.flashcards = "Cần ít nhất 1 thẻ học có nội dung";
+    const hasContent = flashcards.some((f) => f.term.trim() || f.definition.trim() || f.termImage || f.defImage || f.termAudio || f.defAudio);
+    if (!hasContent) errs.flashcards = "Cần ít nhất 1 thẻ học có nội dung hoặc hình ảnh/âm thanh";
     setErrors(errs);
     return Object.keys(errs).length === 0;
   };
@@ -110,14 +128,46 @@ export default function StudySetFormSB({ defaultValues }: StudySetFormSBProps) {
     setFlashcards((prev) => prev.filter((_, i) => i !== index));
   };
 
-  const updateFlashcard = (
+  const updateFlashcard = <K extends keyof FlashcardField>(
     index: number,
-    field: "term" | "definition",
-    value: string,
+    field: K,
+    value: FlashcardField[K],
   ) => {
     setFlashcards((prev) =>
       prev.map((f, i) => (i === index ? { ...f, [field]: value } : f)),
     );
+  };
+
+  const handleMediaUpload = async (index: number, file: File, side: "TERM"|"DEF", type: "IMAGE"|"AUDIO") => {
+    if (type === "IMAGE" && !file.type.startsWith("image/")) {
+      alert("Vui lòng chọn file hình ảnh hợp lệ");
+      return;
+    }
+    if (type === "AUDIO" && !file.type.startsWith("audio/")) {
+      alert("Vui lòng chọn file âm thanh hợp lệ");
+      return;
+    }
+    if (file.size > 25 * 1024 * 1024) {
+      alert("Kích thước file không được vượt quá 25MB");
+      return;
+    }
+
+    updateFlashcard(index, "isUploading", true);
+    try {
+      const { mediaApi } = await import("~/lib/api-client");
+      const res = await mediaApi.upload(file);
+      const fieldName = side === "TERM" ? (type === "IMAGE" ? "termImage" : "termAudio") : (type === "IMAGE" ? "defImage" : "defAudio");
+      updateFlashcard(index, fieldName, res.url);
+    } catch (err: any) {
+      alert(err.message || "Lỗi khi tải lên");
+    } finally {
+      updateFlashcard(index, "isUploading", false);
+    }
+  };
+
+  const removeMedia = (index: number, side: "TERM"|"DEF", type: "IMAGE"|"AUDIO") => {
+    const fieldName = side === "TERM" ? (type === "IMAGE" ? "termImage" : "termAudio") : (type === "IMAGE" ? "defImage" : "defAudio");
+    updateFlashcard(index, fieldName, undefined);
   };
 
   // Drag-and-drop reorder
@@ -142,13 +192,21 @@ export default function StudySetFormSB({ defaultValues }: StudySetFormSBProps) {
     if (!validate()) return;
 
     const flashcardPayload: FlashcardRequest[] = flashcards
-      .filter((f) => f.term.trim() || f.definition.trim())
-      .map((f, i) => ({
-        id: f.id,
-        term: f.term,
-        definition: f.definition,
-        position: i,
-      }));
+      .filter((f) => f.term.trim() || f.definition.trim() || f.termImage || f.defImage || f.termAudio || f.defAudio)
+      .map((f, i) => {
+        const mediaList: any[] = [];
+        if (f.termImage) mediaList.push({ url: f.termImage, type: "IMAGE", side: "TERM" });
+        if (f.termAudio) mediaList.push({ url: f.termAudio, type: "AUDIO", side: "TERM" });
+        if (f.defImage) mediaList.push({ url: f.defImage, type: "IMAGE", side: "DEFINITION" });
+        if (f.defAudio) mediaList.push({ url: f.defAudio, type: "AUDIO", side: "DEFINITION" });
+        return {
+          id: f.id,
+          term: f.term,
+          definition: f.definition,
+          position: i,
+          mediaList,
+        };
+      });
 
     const payload = {
       title: title.trim(),
@@ -429,6 +487,59 @@ export default function StudySetFormSB({ defaultValues }: StudySetFormSBProps) {
                       rows={2}
                       className="w-full resize-none rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-primary"
                     />
+                    <div className="mt-2 flex flex-wrap gap-2">
+                      {card.termImage ? (
+                        <div className="relative inline-block">
+                          <img src={card.termImage} alt="Term image" className="h-16 rounded-md border object-cover" />
+                          <button
+                            type="button"
+                            onClick={() => removeMedia(index, "TERM", "IMAGE")}
+                            className="absolute -right-2 -top-2 rounded-full bg-destructive p-1 text-white shadow hover:bg-destructive/90"
+                          >
+                            <Trash2Icon size={12} />
+                          </button>
+                        </div>
+                      ) : (
+                        <label className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-input bg-muted/50 px-2 py-1 text-xs font-medium text-muted-foreground hover:bg-muted hover:text-foreground">
+                          {card.isUploading ? <Loader2 size={12} className="animate-spin" /> : <ImageIcon size={12} />}
+                          Ảnh
+                          <input
+                            type="file" accept="image/*" className="hidden"
+                            onChange={(e) => {
+                              const file = e.target.files?.[0];
+                              if (file) void handleMediaUpload(index, file, "TERM", "IMAGE");
+                              e.target.value = "";
+                            }}
+                          />
+                        </label>
+                      )}
+
+                      {card.termAudio ? (
+                        <div className="relative inline-block">
+                          <audio src={card.termAudio} controls className="h-8 max-w-[150px]" />
+                          <button
+                            type="button"
+                            onClick={() => removeMedia(index, "TERM", "AUDIO")}
+                            className="absolute -right-2 -top-2 rounded-full bg-destructive p-1 text-white shadow hover:bg-destructive/90"
+                          >
+                            <Trash2Icon size={12} />
+                          </button>
+                        </div>
+                      ) : (
+                        <label className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-input bg-muted/50 px-2 py-1 text-xs font-medium text-muted-foreground hover:bg-muted hover:text-foreground">
+                          {card.isUploading ? <Loader2 size={12} className="animate-spin" /> : <Mic size={12} />}
+                          Âm thanh
+                          <input
+                            type="file" accept="audio/*" className="hidden"
+                            onChange={(e) => {
+                              const file = e.target.files?.[0];
+                              if (file) void handleMediaUpload(index, file, "TERM", "AUDIO");
+                              e.target.value = "";
+                            }}
+                          />
+                        </label>
+                      )}
+                    </div>
                   </div>
                   <div className="space-y-1">
                     <label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
@@ -444,6 +555,59 @@ export default function StudySetFormSB({ defaultValues }: StudySetFormSBProps) {
                       rows={2}
                       className="w-full resize-none rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-primary"
                     />
+                    <div className="mt-2 flex flex-wrap gap-2">
+                      {card.defImage ? (
+                        <div className="relative inline-block">
+                          <img src={card.defImage} alt="Def image" className="h-16 rounded-md border object-cover" />
+                          <button
+                            type="button"
+                            onClick={() => removeMedia(index, "DEF", "IMAGE")}
+                            className="absolute -right-2 -top-2 rounded-full bg-destructive p-1 text-white shadow hover:bg-destructive/90"
+                          >
+                            <Trash2Icon size={12} />
+                          </button>
+                        </div>
+                      ) : (
+                        <label className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-input bg-muted/50 px-2 py-1 text-xs font-medium text-muted-foreground hover:bg-muted hover:text-foreground">
+                          {card.isUploading ? <Loader2 size={12} className="animate-spin" /> : <ImageIcon size={12} />}
+                          Ảnh
+                          <input
+                            type="file" accept="image/*" className="hidden"
+                            onChange={(e) => {
+                              const file = e.target.files?.[0];
+                              if (file) void handleMediaUpload(index, file, "DEF", "IMAGE");
+                              e.target.value = "";
+                            }}
+                          />
+                        </label>
+                      )}
+
+                      {card.defAudio ? (
+                        <div className="relative inline-block">
+                          <audio src={card.defAudio} controls className="h-8 max-w-[150px]" />
+                          <button
+                            type="button"
+                            onClick={() => removeMedia(index, "DEF", "AUDIO")}
+                            className="absolute -right-2 -top-2 rounded-full bg-destructive p-1 text-white shadow hover:bg-destructive/90"
+                          >
+                            <Trash2Icon size={12} />
+                          </button>
+                        </div>
+                      ) : (
+                        <label className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-input bg-muted/50 px-2 py-1 text-xs font-medium text-muted-foreground hover:bg-muted hover:text-foreground">
+                          {card.isUploading ? <Loader2 size={12} className="animate-spin" /> : <Mic size={12} />}
+                          Âm thanh
+                          <input
+                            type="file" accept="audio/*" className="hidden"
+                            onChange={(e) => {
+                              const file = e.target.files?.[0];
+                              if (file) void handleMediaUpload(index, file, "DEF", "AUDIO");
+                              e.target.value = "";
+                            }}
+                          />
+                        </label>
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>
