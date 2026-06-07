@@ -47,6 +47,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/studysets/{id}").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/studysets/{id}/flashcards").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/flashcards/**").permitAll()
+                        .requestMatchers("/uploads/**").permitAll()
                         // Tất cả endpoint còn lại yêu cầu auth
                         .anyRequest().authenticated()
                 )

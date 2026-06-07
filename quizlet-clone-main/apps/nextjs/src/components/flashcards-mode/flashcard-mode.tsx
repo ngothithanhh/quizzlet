@@ -10,6 +10,7 @@ import {
   RotateCcw,
   Settings,
   Shuffle,
+  Volume2,
   X,
 } from "lucide-react";
 import Link from "next/link";
@@ -93,6 +94,18 @@ function FlipCard({ card, fullscreen, sortMode, onSwipeLeft, onSwipeRight }: Fli
 
   const minH = fullscreen ? "min-h-[44rem]" : "min-h-[22rem] sm:min-h-[26rem]";
 
+  const termImage = card.mediaList?.find(m => m.side === "TERM" && m.type === "IMAGE");
+  const termAudio = card.mediaList?.find(m => m.side === "TERM" && m.type === "AUDIO");
+  const defImage = card.mediaList?.find(m => m.side === "DEFINITION" && m.type === "IMAGE");
+  const defAudio = card.mediaList?.find(m => m.side === "DEFINITION" && m.type === "AUDIO");
+
+  const playAudio = (e: React.MouseEvent, url?: string) => {
+    e.stopPropagation();
+    if (url) {
+      new Audio(url).play().catch(console.error);
+    }
+  };
+
   return (
     <div className={`relative w-full ${minH}`} style={{ perspective: 1200 }}>
       {/* Swipe feedback */}
@@ -126,16 +139,30 @@ function FlipCard({ card, fullscreen, sortMode, onSwipeLeft, onSwipeRight }: Fli
         transition={{ duration: 0.45, ease: [0.23, 1, 0.32, 1] }}
       >
         {/* Front */}
-        <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-slate-800 to-slate-900 shadow-2xl [backface-visibility:hidden] flex flex-col p-6 text-foreground">
-          <span className="inline-flex items-center gap-1.5 self-start rounded-full bg-card px-3 py-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-            Thuật ngữ
-          </span>
-          <div className="flex flex-1 items-center justify-center px-4">
-            <p className={`text-center font-bold leading-relaxed ${card.term.length > 80 ? "text-xl" : card.term.length > 40 ? "text-2xl" : "text-3xl"}`}>
+        <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-slate-800 to-slate-900 shadow-2xl [backface-visibility:hidden] flex flex-col p-6 text-slate-50">
+          <div className="flex items-center justify-between">
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-700/50 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-slate-300">
+              Thuật ngữ
+            </span>
+            {termAudio && (
+              <button
+                onClick={(e) => playAudio(e, termAudio.url)}
+                className="rounded-full p-2 text-slate-400 transition hover:bg-white/10 hover:text-white"
+                title="Phát âm thanh"
+              >
+                <Volume2 size={20} />
+              </button>
+            )}
+          </div>
+          <div className="flex flex-1 flex-col items-center justify-center px-4 overflow-y-auto mt-2">
+            {termImage && (
+              <img src={termImage.url} alt="term" className="max-h-32 object-contain mb-4 rounded-md shadow-sm" />
+            )}
+            <p className={`text-center font-bold leading-relaxed text-white ${card.term.length > 80 ? "text-xl" : card.term.length > 40 ? "text-2xl" : "text-3xl"}`}>
               {card.term}
             </p>
           </div>
-          <p className="text-center text-xs text-muted-foreground">Nhấp để xem định nghĩa</p>
+          <p className="text-center text-xs text-slate-400 mt-2">Nhấp để xem định nghĩa</p>
         </div>
 
         {/* Back */}
@@ -143,15 +170,29 @@ function FlipCard({ card, fullscreen, sortMode, onSwipeLeft, onSwipeRight }: Fli
           className="absolute inset-0 rounded-2xl bg-gradient-to-br from-violet-700 to-indigo-800 shadow-2xl [backface-visibility:hidden] flex flex-col p-6 text-primary-foreground"
           style={{ transform: "rotateX(180deg)" }}
         >
-          <span className="inline-flex items-center gap-1.5 self-start rounded-full bg-muted px-3 py-1 text-xs font-semibold uppercase tracking-wide text-foreground/90">
-            Định nghĩa
-          </span>
-          <div className="flex flex-1 items-center justify-center px-4">
+          <div className="flex items-center justify-between">
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-muted px-3 py-1 text-xs font-semibold uppercase tracking-wide text-foreground/90">
+              Định nghĩa
+            </span>
+            {defAudio && (
+              <button
+                onClick={(e) => playAudio(e, defAudio.url)}
+                className="rounded-full p-2 text-primary-foreground transition hover:bg-black/10"
+                title="Phát âm thanh"
+              >
+                <Volume2 size={20} />
+              </button>
+            )}
+          </div>
+          <div className="flex flex-1 flex-col items-center justify-center px-4 overflow-y-auto mt-2">
+            {defImage && (
+              <img src={defImage.url} alt="definition" className="max-h-32 object-contain mb-4 rounded-md shadow-sm" />
+            )}
             <p className={`text-center font-bold leading-relaxed ${card.definition.length > 80 ? "text-xl" : card.definition.length > 40 ? "text-2xl" : "text-3xl"}`}>
               {card.definition}
             </p>
           </div>
-          <p className="text-center text-xs text-muted-foreground">Nhấp để xem thuật ngữ</p>
+          <p className="text-center text-xs text-primary-foreground/70 mt-2">Nhấp để xem thuật ngữ</p>
         </div>
       </motion.div>
     </div>

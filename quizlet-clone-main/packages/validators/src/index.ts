@@ -7,12 +7,19 @@ export const CreateUserSchema = z.object({
   password: z.string(),
 });
 
+const FlashcardMediaSchema = z.object({
+  url: z.string().url(),
+  type: z.enum(["IMAGE", "AUDIO"]),
+  side: z.enum(["TERM", "DEFINITION"]),
+});
+
 const FlashcardSchema = z.object({
   term: z.string().min(1, "Specify term of your flashcard"),
   definition: z.string().min(1, "Specify definition of your flashcard"),
   position: z.number(),
   id: z.number().optional(),
   studySetId: z.string().optional(),
+  mediaList: z.array(FlashcardMediaSchema).optional(),
 });
 
 export const StudySetSchema = z.object({

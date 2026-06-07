@@ -9,6 +9,7 @@ import MobileMenu from "./mobile-menu";
 import SignInButton from "./sign-in-button";
 import UserDropdown from "./user-dropdown";
 import NotificationDropdown from "./notification-dropdown";
+import GlobalSearch from "./global-search";
 
 const Navbar = () => {
   const { isLoggedIn, isLoading } = useAuth();
@@ -46,6 +47,7 @@ const Navbar = () => {
           </Link>
         )}
         <CreateOptionsDropdown />
+        <GlobalSearch />
       </div>
       <div className="flex items-center gap-2">
         {isLoggedIn && <NotificationDropdown />}

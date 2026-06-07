@@ -32,6 +32,6 @@ public class Flashcard extends BaseEntity {
     @JoinColumn(name = "study_set_id")
     private StudySet studySet;
 
-    @OneToMany(mappedBy = "flashcard", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "flashcard", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<FlashcardMedia> mediaList;
 }

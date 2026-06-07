@@ -23,6 +23,14 @@ const config = {
   images: {
     remotePatterns: [{ hostname: "lh3.googleusercontent.com" }],
   },
+  async rewrites() {
+    return [
+      {
+        source: "/quizzlet/:path*",
+        destination: "http://localhost:8080/quizzlet/:path*",
+      },
+    ];
+  },
 };
 
 export default config;

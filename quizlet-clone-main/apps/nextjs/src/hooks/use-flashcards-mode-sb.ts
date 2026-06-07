@@ -24,14 +24,13 @@ export function useFlashcardsModeSB(studySetIdStr: string) {
   const [messageRef, animateMessage] = useAnimate();
 
   // Keep flashcards in sync when studySet data arrives
-  const prevFlashcardsRef = useRef<FlashcardResponse[]>([]);
+  const prevFlashcardsRef = useRef<string>("");
   useEffect(() => {
     if (!studySet) return;
-    const prev = prevFlashcardsRef.current;
-    const next = studySet.flashcards;
-    if (prev.length !== next.length || prev[0]?.id !== next[0]?.id) {
-      dispatch({ type: "SET_FLASHCARDS", payload: next });
-      prevFlashcardsRef.current = next;
+    const nextStr = JSON.stringify(studySet.flashcards);
+    if (prevFlashcardsRef.current !== nextStr) {
+      dispatch({ type: "SET_FLASHCARDS", payload: studySet.flashcards });
+      prevFlashcardsRef.current = nextStr;
     }
   }, [studySet, dispatch]);
 

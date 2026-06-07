@@ -17,6 +17,7 @@ import {
   FileText,
   Download,
   Upload,
+  Volume2,
 } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 
@@ -92,9 +93,25 @@ function FlashcardRow({ card, index, onSaved, onDeleted }: FlashcardRowProps) {
   const { mutate: del, isPending: isDeleting } = useDeleteFlashcard();
 
   const save = async () => {
-    await update(card.id, { term, definition, studySetId: card.studySetId }, {
+    await update(card.id, { 
+      term, 
+      definition, 
+      studySetId: card.studySetId,
+      mediaList: card.mediaList 
+    }, {
       onSuccess: () => { setEditing(false); onSaved(); },
     });
+  };
+
+  const termImage = card.mediaList?.find(m => m.side === "TERM" && m.type === "IMAGE");
+  const termAudio = card.mediaList?.find(m => m.side === "TERM" && m.type === "AUDIO");
+  const defImage = card.mediaList?.find(m => m.side === "DEFINITION" && m.type === "IMAGE");
+  const defAudio = card.mediaList?.find(m => m.side === "DEFINITION" && m.type === "AUDIO");
+
+  const playAudio = (url?: string) => {
+    if (url) {
+      new Audio(url).play().catch(console.error);
+    }
   };
 
   return (
@@ -124,33 +141,58 @@ function FlashcardRow({ card, index, onSaved, onDeleted }: FlashcardRowProps) {
               </div>
             ))}
           </div>
-          <div className="flex justify-end gap-2">
-            <button
-              onClick={() => { setEditing(false); setTerm(card.term); setDefinition(card.definition); }}
-              className="rounded-lg px-3 py-1.5 text-xs text-muted-foreground hover:bg-card"
-            >
-              Huỷ
-            </button>
-            <button
-              onClick={() => void save()}
-              disabled={isUpdating}
-              className="flex items-center gap-1 rounded-lg bg-violet-600 px-4 py-1.5 text-xs font-semibold text-primary-foreground hover:bg-violet-500 disabled:opacity-60"
-            >
-              {isUpdating && <Loader2 size={12} className="animate-spin" />}
-              Lưu thay đổi
-            </button>
+          <div className="flex items-center justify-between mt-2">
+            <span className="text-[10px] text-muted-foreground italic">
+              Để thêm/sửa hình ảnh và âm thanh, vui lòng dùng nút "Chỉnh sửa" học phần ở trên.
+            </span>
+            <div className="flex gap-2">
+              <button
+                onClick={() => { setEditing(false); setTerm(card.term); setDefinition(card.definition); }}
+                className="rounded-lg px-3 py-1.5 text-xs text-muted-foreground hover:bg-card"
+              >
+                Huỷ
+              </button>
+              <button
+                onClick={() => void save()}
+                disabled={isUpdating}
+                className="flex items-center gap-1 rounded-lg bg-violet-600 px-4 py-1.5 text-xs font-semibold text-primary-foreground hover:bg-violet-500 disabled:opacity-60"
+              >
+                {isUpdating && <Loader2 size={12} className="animate-spin" />}
+                Lưu thay đổi
+              </button>
+            </div>
           </div>
         </div>
       ) : (
         <div className="flex items-start gap-4 p-4">
           <div className="flex-1 grid grid-cols-2 gap-6">
             <div>
-              <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Thuật ngữ</p>
-              <p className="text-sm font-medium text-foreground leading-relaxed">{card.term}</p>
+              <div className="mb-1 flex items-center justify-between">
+                <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Thuật ngữ</p>
+                {termAudio && (
+                  <button onClick={() => playAudio(termAudio.url)} className="text-muted-foreground hover:text-foreground transition-colors" title="Phát âm thanh">
+                    <Volume2 size={14} />
+                  </button>
+                )}
+              </div>
+              <p className="text-sm font-medium text-foreground leading-relaxed whitespace-pre-line">{card.term}</p>
+              {termImage && (
+                <img src={termImage.url} alt="Term" className="mt-3 max-h-20 rounded-md border border-border/50 object-contain shadow-sm" />
+              )}
             </div>
             <div className="border-l border-border pl-6">
-              <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Định nghĩa</p>
-              <p className="text-sm text-muted-foreground leading-relaxed">{card.definition}</p>
+              <div className="mb-1 flex items-center justify-between">
+                <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Định nghĩa</p>
+                {defAudio && (
+                  <button onClick={() => playAudio(defAudio.url)} className="text-muted-foreground hover:text-foreground transition-colors" title="Phát âm thanh">
+                    <Volume2 size={14} />
+                  </button>
+                )}
+              </div>
+              <p className="text-sm text-muted-foreground leading-relaxed whitespace-pre-line">{card.definition}</p>
+              {defImage && (
+                <img src={defImage.url} alt="Definition" className="mt-3 max-h-20 rounded-md border border-border/50 object-contain shadow-sm" />
+              )}
             </div>
           </div>
           <div className="flex shrink-0 flex-col items-center gap-1 opacity-0 transition group-hover:opacity-100">
@@ -245,18 +287,23 @@ function AddFlashcardForm({ studySetId, onAdded }: { studySetId: number; onAdded
           </div>
         ))}
       </div>
-      <div className="flex gap-2 justify-end">
-        <button onClick={() => { setOpen(false); setTerm(""); setDefinition(""); }} className="rounded-lg px-3 py-1.5 text-xs text-muted-foreground hover:bg-card">
-          Huỷ
-        </button>
-        <button
-          onClick={() => void submit()}
-          disabled={isPending}
-          className="flex items-center gap-1 rounded-lg bg-violet-600 px-4 py-1.5 text-xs font-semibold text-primary-foreground hover:bg-violet-500 disabled:opacity-60"
-        >
-          {isPending && <Loader2 size={12} className="animate-spin" />}
-          Thêm thẻ
-        </button>
+      <div className="flex items-center justify-between mt-2">
+        <span className="text-[10px] text-muted-foreground italic">
+          Để đính kèm hình ảnh và âm thanh, vui lòng sử dụng giao diện "Chỉnh sửa" học phần.
+        </span>
+        <div className="flex gap-2">
+          <button onClick={() => { setOpen(false); setTerm(""); setDefinition(""); }} className="rounded-lg px-3 py-1.5 text-xs text-muted-foreground hover:bg-card">
+            Huỷ
+          </button>
+          <button
+            onClick={() => void submit()}
+            disabled={isPending}
+            className="flex items-center gap-1 rounded-lg bg-violet-600 px-4 py-1.5 text-xs font-semibold text-primary-foreground hover:bg-violet-500 disabled:opacity-60"
+          >
+            {isPending && <Loader2 size={12} className="animate-spin" />}
+            Thêm thẻ
+          </button>
+        </div>
       </div>
     </motion.div>
   );

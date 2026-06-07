@@ -16,7 +16,10 @@ public interface StudySetService {
 
     void delete(Long id);
     StudySetResponse getById(Long id);
+
     List<StudySetSimpleResponse> getAll(String keyword);
+
     List<StudySetSimpleResponse> getMyStudySets();
+
     StudySetResponse setVisibility(Long id, boolean isPublic);
 }

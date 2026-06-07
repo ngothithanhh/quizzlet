@@ -70,14 +70,37 @@ public class StudySetServiceImpl implements StudySetService {
             for (FlashcardRequest fReq : request.getFlashcards()) {
                 Flashcard f;
                 if (fReq.getId() != null) {
-                    f = studySet.getFlashcards().stream()
+                    final Flashcard finalF = fReq.getId() != null ? studySet.getFlashcards().stream()
                             .filter(card -> fReq.getId().equals(card.getId()))
                             .findFirst()
-                            .orElse(new Flashcard());
+                            .orElse(new Flashcard()) : new Flashcard();
+                    f = finalF;
                     f.setTerm(fReq.getTerm());
                     f.setDefinition(fReq.getDefinition());
+                    
+                    if (fReq.getMediaList() != null) {
+                        if (f.getMediaList() != null) {
+                            f.getMediaList().clear();
+                        } else {
+                            f.setMediaList(new ArrayList<>());
+                        }
+                        List<com.example.quizzlet.entity.FlashcardMedia> newMedia = fReq.getMediaList().stream()
+                                .map(req -> {
+                                    com.example.quizzlet.entity.FlashcardMedia m = com.example.quizzlet.mapper.FlashcardMediaMapper.toEntity(req);
+                                    m.setFlashcard(finalF);
+                                    return m;
+                                }).toList();
+                        f.getMediaList().addAll(newMedia);
+                    } else if (f.getMediaList() != null) {
+                        f.getMediaList().clear();
+                    }
                 } else {
                     f = com.example.quizzlet.mapper.FlashcardMapper.toEntity(fReq);
+                    if (f.getMediaList() != null) {
+                        for (com.example.quizzlet.entity.FlashcardMedia media : f.getMediaList()) {
+                            media.setFlashcard(f);
+                        }
+                    }
                 }
                 f.setStudySet(studySet);
                 f.setPosition(position++);

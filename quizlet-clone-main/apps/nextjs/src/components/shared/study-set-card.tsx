@@ -1,10 +1,9 @@
-import Link from "next/link";
+"use client";
 
+import Link from "next/link";
+import { BookOpen, Eye, EyeOff, Star } from "lucide-react";
 import type { StudySetSimpleResponse } from "~/lib/api-client";
-import { Avatar, AvatarFallback, AvatarImage } from "@acme/ui/avatar";
-import { Badge } from "@acme/ui/badge";
-import { Button } from "@acme/ui/button";
-import { Card, CardContent } from "@acme/ui/card";
+import { FavoriteButton } from "./favorite-button";
 
 const StudySetCard = ({
   studySet,
@@ -14,26 +13,58 @@ const StudySetCard = ({
   const { id, title, totalFlashcards, username } = studySet;
 
   return (
-    <Card className="relative cursor-pointer hover:shadow-md">
+    <div className="group relative flex flex-col justify-between rounded-xl border border-border bg-card p-5 shadow-sm transition-all hover:shadow-md hover:-translate-y-0.5">
       <Link
         href={`/study-sets/${id}`}
-        className="absolute left-0 top-0 h-full w-full"
-      ></Link>
-      <CardContent className="p-5">
-        <span className="mb-2">{title}</span>
-        <Badge className="mt-2 block w-fit">Terms {totalFlashcards}</Badge>
-        <div className="relative z-10 mt-8 inline-flex items-center">
-          <Avatar className="mr-2 h-6 w-6">
-            <AvatarFallback className="text-sm">
-              {username?.charAt(0).toUpperCase() || "U"}
-            </AvatarFallback>
-          </Avatar>
-          <Button variant="link" className="p-0 text-foreground">
-            {username}
-          </Button>
+        className="absolute inset-0 z-0 rounded-xl"
+        aria-label={title}
+      />
+
+      <div className="relative z-10">
+        <FavoriteButton studySetId={id} />
+        {/* Header with Title */}
+        <div className="flex items-start justify-between">
+          <h3 className="mb-1 line-clamp-2 font-semibold text-foreground pr-6">
+            {title}
+          </h3>
         </div>
-      </CardContent>
-    </Card>
+
+        {/* Description */}
+        {studySet.description && (
+          <p className="mb-3 line-clamp-2 text-xs text-muted-foreground">
+            {studySet.description}
+          </p>
+        )}
+
+        {/* Meta row */}
+        <div className="mt-3 flex items-center gap-3 text-xs text-muted-foreground">
+          <span className="flex items-center gap-1">
+            <BookOpen size={12} />
+            {totalFlashcards} thẻ
+          </span>
+          <span className="flex items-center gap-1">
+            <Star size={12} />
+            {studySet.favoriteCount}
+          </span>
+          <span className="flex items-center gap-1">
+            {studySet.isPublic ? (
+              <>
+                <Eye size={12} /> Công khai
+              </>
+            ) : (
+              <>
+                <EyeOff size={12} /> Riêng tư
+              </>
+            )}
+          </span>
+        </div>
+      </div>
+
+      {/* Username */}
+      <div className="relative z-10 mt-4 flex items-center justify-between">
+        <span className="text-xs text-muted-foreground">@{username}</span>
+      </div>
+    </div>
   );
 };
 

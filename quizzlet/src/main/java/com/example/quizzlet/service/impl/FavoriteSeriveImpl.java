@@ -11,6 +11,7 @@ import com.example.quizzlet.repository.StudySetRepository;
 import com.example.quizzlet.repository.UserRepository;
 import com.example.quizzlet.service.FavoriteService;
 import com.example.quizzlet.ultils.SecurityUtils;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -26,60 +27,68 @@ public class FavoriteSeriveImpl implements FavoriteService {
     private final FavoriteRepository favoriteRepository;
 
     @Override
-    public String add(Long studySetId){
+    @Transactional
+    public String add(Long studySetId) {
         Long userId = SecurityUtils.getCurrentUserId();
 
-        User user = userRepository.findById(userId).orElseThrow(()->new RuntimeException("Không tìm thấy người dùng!"));
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy người dùng!"));
 
-        StudySet studySet = studySetRepository.findById(studySetId).orElseThrow(()->new RuntimeException("Không tìm thâý bộ thẻ này!"));
+        StudySet studySet = studySetRepository.findById(studySetId)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy bộ thẻ!"));
+
+        FavoriteId id = new FavoriteId(userId, studySetId);
+
+        if (favoriteRepository.existsById(id)) {
+            favoriteRepository.deleteById(id);
+            updateFavoriteCount(studySet, -1);
+            return "Đã xóa bộ thẻ " + studySet.getTitle() + " khỏi mục yêu thích!";
+        }
 
         Favorite favorite = Favorite.builder()
-                .id(new FavoriteId(userId, studySetId))
+                .id(id)
                 .studySet(studySet)
                 .user(user)
                 .build();
 
         favoriteRepository.save(favorite);
-
-        Integer current = studySet.getFavoriteCount() + 1;
-
-        studySet.setFavoriteCount(current);
-
-        studySetRepository.save(studySet);
+        updateFavoriteCount(studySet, 1);
 
         return "Đã thêm bộ thẻ " + studySet.getTitle() + " vào mục yêu thích!";
     }
 
     @Override
-    public String remove(Long studySetId){
+    @Transactional
+    public String remove(Long studySetId) {
         Long userId = SecurityUtils.getCurrentUserId();
 
-        StudySet studySet = studySetRepository.findById(studySetId).orElseThrow(()->new RuntimeException("Không tìm thâý bộ thẻ này!"));
+        StudySet studySet = studySetRepository.findById(studySetId)
+                .orElseThrow(() -> new RuntimeException("Khong tim thay bo the nay!"));
 
-        FavoriteId id =new FavoriteId(userId,studySetId);
+        FavoriteId id = new FavoriteId(userId, studySetId);
 
-        if(favoriteRepository.existsById(id)){
+        if (favoriteRepository.existsById(id)) {
             favoriteRepository.deleteById(id);
-
-            Integer current = studySet.getFavoriteCount() + 1;
-
-            studySet.setFavoriteCount(current);
-
-            studySetRepository.save(studySet);
-
-            return "Đã xóa bộ thẻ " + studySet.getTitle() + " khỏi mục yêu thích!";
+            updateFavoriteCount(studySet, -1);
+            return "Da xoa bo the " + studySet.getTitle() + " khoi muc yeu thich!";
         }
 
-        return null;
+        return "Bo the nay chua nam trong muc yeu thich!";
     }
 
     @Override
-    public List<StudySetResponse> getMyFavorites(){
+    public List<StudySetResponse> getMyFavorites() {
         Long userId = SecurityUtils.getCurrentUserId();
 
         return favoriteRepository.findStudySetsByUserId(userId)
                 .stream()
-                .map(StudySetMapper ::toResponse)
+                .map(StudySetMapper::toResponse)
                 .collect(Collectors.toList());
+    }
+
+    private void updateFavoriteCount(StudySet studySet, int delta) {
+        int current = studySet.getFavoriteCount() == null ? 0 : studySet.getFavoriteCount();
+        studySet.setFavoriteCount(Math.max(0, current + delta));
+        studySetRepository.save(studySet);
     }
 }
