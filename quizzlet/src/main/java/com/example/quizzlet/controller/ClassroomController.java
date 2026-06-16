@@ -84,6 +84,11 @@ public class ClassroomController {
         return ResponseEntity.ok(classroomService.addStudySet(classId,studySetId));
     }
 
+    @PostMapping("/{classId}/add-favorite-studyset/{studySetId}")
+    public ResponseEntity<ClassroomResponse> addFavoriteStudySetToClassroom(@PathVariable Long classId, @PathVariable Long studySetId){
+        return ResponseEntity.ok(classroomService.addFavoriteStudySet(classId, studySetId));
+    }
+
     @GetMapping("/studysets/{classId}")
     public ResponseEntity<List<StudySetResponse>> getStudySetsByClassroom(@PathVariable Long classId){
         return ResponseEntity.ok(classroomService.getStudySetsByClassroom(classId));

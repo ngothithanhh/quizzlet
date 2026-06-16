@@ -23,6 +23,8 @@ public interface ClassroomService {
 
     ClassroomResponse addStudySet(Long classroomId, Long studySetId);
 
+    ClassroomResponse addFavoriteStudySet(Long classroomId, Long studySetId);
+
     String removeStudySet(Long classroomId, Long studySetId);
 
     List<StudySetResponse> getStudySetsByClassroom(Long classroomId);

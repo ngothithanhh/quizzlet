@@ -13,6 +13,7 @@ import com.example.quizzlet.mapper.ClassroomMapper;
 import com.example.quizzlet.mapper.StudySetMapper;
 import com.example.quizzlet.repository.ClassMemberRepository;
 import com.example.quizzlet.repository.ClassroomRepository;
+import com.example.quizzlet.repository.FavoriteRepository;
 import com.example.quizzlet.repository.StudySetRepository;
 import com.example.quizzlet.repository.UserRepository;
 import com.example.quizzlet.service.ClassroomService;
@@ -23,6 +24,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -37,6 +39,7 @@ public class ClassroomServiceImpl implements ClassroomService {
     private final ClassMemberRepository memberRepository;
     private final StudySetRepository studySetRepository;
     private final NotificationService notificationService;
+    private final FavoriteRepository favoriteRepository;
 
     //tao
     @Transactional
@@ -319,6 +322,7 @@ public class ClassroomServiceImpl implements ClassroomService {
 
     //them bo the vao lop hoc
     @Override
+    @Transactional
     public ClassroomResponse addStudySet(Long classroomId, Long studySetId){
         Long userId = SecurityUtils.getCurrentUserId();
 
@@ -332,6 +336,11 @@ public class ClassroomServiceImpl implements ClassroomService {
 
         StudySet studySet = studySetRepository.findById(studySetId).orElseThrow(()->new RuntimeException("Không tìm thấy bộ thẻ!"));
 
+
+        if(classroom.getStudySets() == null){
+            classroom.setStudySets(new ArrayList<>());
+        }
+
         if(!classroom.getStudySets().contains(studySet)){
             classroom.getStudySets().add(studySet);
             classroom.setUpdatedAt(LocalDateTime.now());
@@ -341,6 +350,20 @@ public class ClassroomServiceImpl implements ClassroomService {
 
         return ClassroomMapper.toClassroomResponse(classroom,member);
 
+    }
+
+    //them bo the yeu thich vao lop hoc
+    @Override
+    @Transactional
+    public ClassroomResponse addFavoriteStudySet(Long classroomId, Long studySetId){
+        Long userId = SecurityUtils.getCurrentUserId();
+        FavoriteId favoriteId = new FavoriteId(userId, studySetId);
+
+        if(!favoriteRepository.existsById(favoriteId)){
+            throw new RuntimeException("Bạn chỉ có thể thêm bộ thẻ đang nằm trong mục yêu thích!");
+        }
+
+        return addStudySet(classroomId, studySetId);
     }
 
     //lay danh sach bo the cua lop

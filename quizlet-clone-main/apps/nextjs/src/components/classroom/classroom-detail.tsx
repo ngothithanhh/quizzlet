@@ -38,7 +38,7 @@ import {
   useRemoveStudySet,
   useCreateAssignment,
 } from "~/hooks/use-classrooms";
-import { useMyStudySets } from "~/hooks/use-study-sets";
+import { useMyStudySets, useFavorites } from "~/hooks/use-study-sets";
 import { testApi, userApi, type UserSearchResponse } from "~/lib/api-client";
 import { FavoriteButton } from "../shared/favorite-button";
 
@@ -549,6 +549,7 @@ function AddStudySetModal({ isOpen, onClose, classId, onSuccess }: any) {
   const [studySetId, setStudySetId] = useState("");
   const { mutate: addStudySet, isPending } = useAddStudySetToClassroom();
   const { data: myStudySets, isLoading: isLoadingStudySets } = useMyStudySets();
+  const { data: favoriteStudySets, isLoading: isLoadingFavorites } = useFavorites();
 
   if (!isOpen) return null;
 
@@ -570,20 +571,33 @@ function AddStudySetModal({ isOpen, onClose, classId, onSuccess }: any) {
               onChange={(e) => setStudySetId(e.target.value)}
               className="w-full rounded-xl border border-input bg-background px-4 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-primary"
               required
-              disabled={isPending || isLoadingStudySets}
+              disabled={isPending || isLoadingStudySets || isLoadingFavorites}
             >
               <option value="">-- Chọn một học phần --</option>
-              {myStudySets?.map((set) => (
-                <option key={set.id} value={set.id}>
-                  {set.title}
-                </option>
-              ))}
+              {myStudySets && myStudySets.length > 0 && (
+                <optgroup label="Học phần của tôi">
+                  {myStudySets.map((set) => (
+                    <option key={`my-${set.id}`} value={set.id}>
+                      {set.title}
+                    </option>
+                  ))}
+                </optgroup>
+              )}
+              {favoriteStudySets && favoriteStudySets.length > 0 && (
+                <optgroup label="Học phần yêu thích">
+                  {favoriteStudySets.map((set) => (
+                    <option key={`fav-${set.id}`} value={set.id}>
+                      {set.title}
+                    </option>
+                  ))}
+                </optgroup>
+              )}
             </select>
           </div>
           <div className="flex justify-end gap-3">
             <button type="button" onClick={onClose} className="rounded-xl px-4 py-2 text-sm font-medium transition hover:bg-muted" disabled={isPending}>Hủy</button>
             <button type="submit" className="inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground shadow transition hover:bg-primary/90" disabled={isPending || !studySetId}>
-              {(isPending || isLoadingStudySets) && <Loader2 size={16} className="animate-spin" />} Thêm vào lớp
+              {(isPending || isLoadingStudySets || isLoadingFavorites) && <Loader2 size={16} className="animate-spin" />} Thêm vào lớp
             </button>
           </div>
         </form>

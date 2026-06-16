@@ -24,7 +24,7 @@ public class FavoriteController {
         return ResponseEntity.ok(favoriteService.remove(studySetId));
     }
 
-    @GetMapping("/get-my-farvorites")
+    @GetMapping({"/get-my-favorites", "/get-my-farvorites"})
     public ResponseEntity<List<StudySetResponse>> getMyFavorites(){
         return ResponseEntity.ok(favoriteService.getMyFavorites());
     }
