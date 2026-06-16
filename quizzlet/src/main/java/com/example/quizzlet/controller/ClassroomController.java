@@ -23,7 +23,7 @@ import java.util.Map;
 public class ClassroomController {
     private final ClassroomService classroomService;
 
-    @PostMapping
+    @PostMapping("/create")
     public ResponseEntity<Map<String,Object>> create(@RequestBody ClassroomRequest request){
         return ResponseEntity.status(HttpStatus.CREATED).body(classroomService.create(request));
     }
