@@ -12,6 +12,7 @@ import com.example.quizzlet.ultils.SecurityUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.List;
@@ -89,12 +90,11 @@ public class MatchServiceImpl implements MatchService {
 
         matchAttemptRepository.save(attempt);
 
-        if(correct){
-            matchSession.setMatchedPairs(matchSession.getMatchedPairs()+1);
-            matchSession.setScore(matchSession.getScore()+10);
-
-        }
-        else {
+        long correctCount = matchAttemptRepository.countByMatchSessionAndIsCorrectTrue(matchSession);
+        matchSession.setMatchedPairs((int) correctCount);
+        matchSession.setScore((int) correctCount * 10);
+        
+        if (!correct) {
             matchSession.setWrongAttempts(matchSession.getWrongAttempts()+1);
         }
 
@@ -102,6 +102,8 @@ public class MatchServiceImpl implements MatchService {
 
         if(completed){
             matchSession.setCompletedAt(LocalDateTime.now());
+            long duration = Duration.between(matchSession.getStartedAt(), LocalDateTime.now()).toMillis();
+            matchSession.setCompletionTime((int) duration);
             StudySession session = matchSession.getSession();
             session.setEndedAt(LocalDateTime.now());
             session.setCorrectAnswers(matchSession.getMatchedPairs());

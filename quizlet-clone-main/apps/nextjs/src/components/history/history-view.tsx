@@ -151,7 +151,9 @@ export default function HistoryView() {
                         <span className="text-xl font-bold text-indigo-600">{item.score}</span>
                         <span className="text-sm text-muted-foreground">điểm</span>
                       </div>
-                      <span className="text-sm font-medium">{(item.timeMs / 1000).toFixed(1)} giây</span>
+                      <span className="text-sm font-medium">
+                        {item.timeMs ? `${(item.timeMs / 1000).toFixed(1)} giây` : "-- giây"}
+                      </span>
                     </div>
                   </CardContent>
                 </Card>

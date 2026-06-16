@@ -300,7 +300,9 @@ export default function ProfileView() {
                     </div>
                     <div className="text-right">
                       <p className="text-sm font-semibold text-indigo-600">{item.score} điểm</p>
-                      <p className="text-xs text-muted-foreground">{(item.timeMs / 1000).toFixed(1)}s</p>
+                      <p className="text-xs text-muted-foreground">
+                        {item.timeMs ? `${(item.timeMs / 1000).toFixed(1)}s` : "--s"}
+                      </p>
                     </div>
                   </div>
                 ))}

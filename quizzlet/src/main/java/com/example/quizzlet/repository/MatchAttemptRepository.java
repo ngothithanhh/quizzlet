@@ -6,4 +6,5 @@ import org.apache.xmlbeans.impl.regex.Match;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface MatchAttemptRepository extends JpaRepository<MatchAttempt,Long> {
+    long countByMatchSessionAndIsCorrectTrue(MatchSession matchSession);
 }
