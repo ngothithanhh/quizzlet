@@ -18,6 +18,7 @@ export interface UserInfo {
   email: string;
   username?: string;
   id?: string;
+  avatarUrl?: string;
 }
 
 /** Decode a JWT without verifying the signature (client-side use only). */

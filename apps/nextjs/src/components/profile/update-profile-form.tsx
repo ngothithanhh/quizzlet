@@ -9,6 +9,7 @@ import { toast } from "@acme/ui/toast";
 
 import { useMyProfile, useUpdateMyProfile } from "~/hooks/use-user";
 import { mediaApi } from "~/lib/api-client";
+import { useAuth } from "~/contexts/auth-context";
 
 const updateProfileSchema = z.object({
   username: z.string().min(2, "Tên hiển thị phải có ít nhất 2 ký tự"),
@@ -18,6 +19,7 @@ const updateProfileSchema = z.object({
 type UpdateProfileFormValues = z.infer<typeof updateProfileSchema>;
 
 export default function UpdateProfileForm() {
+  const { updateUser } = useAuth();
   const { data: profile, isLoading: isProfileLoading } = useMyProfile();
   const { mutate: updateProfile, isPending: isUpdating } = useUpdateMyProfile();
   const [isUploading, setIsUploading] = useState(false);
@@ -52,6 +54,7 @@ export default function UpdateProfileForm() {
   const onSubmit = (data: UpdateProfileFormValues) => {
     updateProfile(data, {
       onSuccess: () => {
+        updateUser({ username: data.username });
         toast.success("Cập nhật thông tin thành công");
       },
       onError: (error: any) => {

@@ -27,7 +27,7 @@ const MobileMenu = () => {
       </SheetTrigger>
       <SheetContent side="left">
         <SheetHeader className="items-center">
-          <Image src="/logo.svg" alt="logo" width={110} height={24} />
+          <span className="text-2xl font-black tracking-tighter text-blue-600 dark:text-blue-500">Quizzlet</span>
         </SheetHeader>
         <div className="flex flex-col py-4">
           <Link href={isLoggedIn ? "/latest" : "/"}>

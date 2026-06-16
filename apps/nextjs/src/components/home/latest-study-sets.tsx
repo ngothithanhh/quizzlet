@@ -29,7 +29,7 @@ const LatestStudySetsGrid = () => {
 const LatestStudySets = () => {
   return (
     <div className="mt-8">
-      <h2 className="mb-6 text-2xl font-bold">Latest study sets</h2>
+      <h2 className="mb-6 text-2xl font-bold">Học phần mới nhất</h2>
       <LatestStudySetsGrid />
     </div>
   );

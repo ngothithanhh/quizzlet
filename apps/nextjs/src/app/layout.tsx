@@ -25,13 +25,13 @@ export const metadata: Metadata = {
       ? "https://turbo.t3.gg"
       : "http://localhost:3000",
   ),
-  title: "Quizlet Clone",
-  description: "Quizlet clone application built with turbo.t3.gg",
+  title: "Quizzlet",
+  description: "Quizzlet application built with turbo.t3.gg",
   openGraph: {
-    title: "Quizlet Clone",
-    description: "Quizlet clone application built with turbo.t3.gg",
+    title: "Quizzlet",
+    description: "Quizzlet application built with turbo.t3.gg",
     url: "https://create-t3-turbo.vercel.app",
-    siteName: "Quizlet Clone",
+    siteName: "Quizzlet",
   },
 };
 

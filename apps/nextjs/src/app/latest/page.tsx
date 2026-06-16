@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 import LatestStudySets from "~/components/home/latest-study-sets";
 
 export const metadata: Metadata = {
-  title: "Quizlet - Latest",
+  title: "Quizzlet - Latest",
 };
 
 export default function Latest() {
