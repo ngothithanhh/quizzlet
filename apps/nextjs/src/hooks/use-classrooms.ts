@@ -527,3 +527,37 @@ export function useCreateAssignment() {
 
   return { mutate, isPending };
 }
+
+// ── useAddFavoriteStudySetToClassroom ────────────────────────────────────────
+
+export function useAddFavoriteStudySetToClassroom() {
+  const [isPending, setIsPending] = useState(false);
+
+  const mutate = useCallback(
+    async (
+      { classId, studySetId }: { classId: number; studySetId: number },
+      options?: {
+        onSuccess?: (result: ClassroomResponse) => void;
+        onError?: (error: Error) => void;
+      },
+    ) => {
+      setIsPending(true);
+      try {
+        const result = await classroomApi.addFavoriteStudySet(classId, studySetId);
+        options?.onSuccess?.(result);
+        return result;
+      } catch (err) {
+        const error = err instanceof Error ? err : new Error("Unknown error");
+        options?.onError?.(error);
+        if (!options?.onError) {
+          console.error("Mutation error:", error);
+        }
+      } finally {
+        setIsPending(false);
+      }
+    },
+    [],
+  );
+
+  return { mutate, isPending };
+}

@@ -328,7 +328,7 @@ export default function LearnMode({ studySetId }: LearnModeProps) {
                     <p className="mb-1 text-xs font-semibold uppercase tracking-widest text-violet-400">
                       Định nghĩa
                     </p>
-                    <p className={`font-bold leading-relaxed text-foreground ${currentCard.definition.length > 60 ? "text-xl" : "text-2xl"}`}>
+                    <p className={`font-bold leading-relaxed text-white ${currentCard.definition.length > 60 ? "text-xl" : "text-2xl"}`}>
                       {currentCard.definition}
                     </p>
                   </motion.div>

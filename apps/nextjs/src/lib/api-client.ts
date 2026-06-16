@@ -587,6 +587,12 @@ export const classroomApi = {
       method: "POST",
     }),
 
+  /** Thêm học phần yêu thích vào lớp học */
+  addFavoriteStudySet: (classId: number, studySetId: number) =>
+    apiFetch<ClassroomResponse>(`/api/classroom/${classId}/add-favorite-studyset/${studySetId}`, {
+      method: "POST",
+    }),
+
   /** Rời khỏi lớp học */
   leaveClassroom: (classId: number) =>
     apiFetch<string>(`/api/classroom/leave/${classId}`, {

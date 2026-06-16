@@ -171,7 +171,7 @@ function FlipCard({ card, fullscreen, sortMode, onSwipeLeft, onSwipeRight }: Fli
           style={{ transform: "rotateX(180deg)" }}
         >
           <div className="flex items-center justify-between">
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-muted px-3 py-1 text-xs font-semibold uppercase tracking-wide text-foreground/90">
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-white/20 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-white">
               Định nghĩa
             </span>
             {defAudio && (
@@ -188,7 +188,7 @@ function FlipCard({ card, fullscreen, sortMode, onSwipeLeft, onSwipeRight }: Fli
             {defImage && (
               <img src={defImage.url} alt="definition" className="max-h-32 object-contain mb-4 rounded-md shadow-sm" />
             )}
-            <p className={`text-center font-bold leading-relaxed ${card.definition.length > 80 ? "text-xl" : card.definition.length > 40 ? "text-2xl" : "text-3xl"}`}>
+            <p className={`text-center text-white font-bold leading-relaxed ${card.definition.length > 80 ? "text-xl" : card.definition.length > 40 ? "text-2xl" : "text-3xl"}`}>
               {card.definition}
             </p>
           </div>
@@ -527,11 +527,10 @@ export default function FlashcardMode({ studySetId, fullscreen }: FlashcardModeP
           <button
             onClick={goLeft}
             disabled={state.mode === "browse" && state.index === 0}
-            className={`flex h-11 w-11 items-center justify-center rounded-full border-2 font-bold transition disabled:opacity-30 ${
-              state.mode === "sort"
-                ? "border-red-500/40 text-red-400 hover:border-red-500 hover:bg-red-500/10"
-                : "border-border text-muted-foreground hover:border-border0 hover:text-foreground"
-            }`}
+            className={`flex h-11 w-11 items-center justify-center rounded-full border-2 font-bold transition disabled:opacity-30 ${state.mode === "sort"
+              ? "border-red-500/40 text-red-400 hover:border-red-500 hover:bg-red-500/10"
+              : "border-border text-muted-foreground hover:border-border0 hover:text-foreground"
+              }`}
             title={state.mode === "sort" ? "Chưa biết" : "Thẻ trước"}
           >
             {state.mode === "sort" ? <X size={20} /> : <ArrowLeft size={20} />}
@@ -545,11 +544,10 @@ export default function FlashcardMode({ studySetId, fullscreen }: FlashcardModeP
 
           <button
             onClick={goRight}
-            className={`flex h-11 w-11 items-center justify-center rounded-full border-2 font-bold transition ${
-              state.mode === "sort"
-                ? "border-emerald-500/40 text-emerald-400 hover:border-emerald-500 hover:bg-emerald-500/10"
-                : "border-border text-muted-foreground hover:border-border0 hover:text-foreground"
-            }`}
+            className={`flex h-11 w-11 items-center justify-center rounded-full border-2 font-bold transition ${state.mode === "sort"
+              ? "border-emerald-500/40 text-emerald-400 hover:border-emerald-500 hover:bg-emerald-500/10"
+              : "border-border text-muted-foreground hover:border-border0 hover:text-foreground"
+              }`}
             title={state.mode === "sort" ? "Biết rồi" : "Thẻ tiếp"}
           >
             {state.mode === "sort" ? <Check size={20} /> : <ArrowRight size={20} />}

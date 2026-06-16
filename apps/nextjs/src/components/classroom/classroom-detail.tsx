@@ -37,6 +37,7 @@ import {
   useUpdateMemberRole,
   useRemoveStudySet,
   useCreateAssignment,
+  useAddFavoriteStudySetToClassroom,
 } from "~/hooks/use-classrooms";
 import { useMyStudySets, useFavorites } from "~/hooks/use-study-sets";
 import { testApi, userApi, type UserSearchResponse } from "~/lib/api-client";
@@ -547,16 +548,28 @@ function EditClassroomModal({ isOpen, onClose, classroom, onSuccess }: any) {
 
 function AddStudySetModal({ isOpen, onClose, classId, onSuccess }: any) {
   const [studySetId, setStudySetId] = useState("");
-  const { mutate: addStudySet, isPending } = useAddStudySetToClassroom();
+  const { mutate: addStudySet, isPending: isAddingMySet } = useAddStudySetToClassroom();
+  const { mutate: addFavoriteStudySet, isPending: isAddingFavoriteSet } = useAddFavoriteStudySetToClassroom();
   const { data: myStudySets, isLoading: isLoadingStudySets } = useMyStudySets();
   const { data: favoriteStudySets, isLoading: isLoadingFavorites } = useFavorites();
 
   if (!isOpen) return null;
 
+  const isPending = isAddingMySet || isAddingFavoriteSet;
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!studySetId || isNaN(Number(studySetId))) return;
-    addStudySet({ classId, studySetId: Number(studySetId) }, { onSuccess: () => { onSuccess(); onClose(); setStudySetId(""); } });
+    const numId = Number(studySetId);
+    
+    // Check if it's my set first, if not, it must be a favorite set
+    const isMySet = myStudySets?.some(s => s.id === numId);
+    
+    if (isMySet) {
+      addStudySet({ classId, studySetId: numId }, { onSuccess: () => { onSuccess(); onClose(); setStudySetId(""); } });
+    } else {
+      addFavoriteStudySet({ classId, studySetId: numId }, { onSuccess: () => { onSuccess(); onClose(); setStudySetId(""); } });
+    }
   };
 
   return (

@@ -223,12 +223,16 @@ export default function MatchMode({ studySetId }: { studySetId: number }) {
   const [screen, setScreen] = useState<Screen>("start");
 
   const [sessionData, setSessionData] = useState<MatchStartResponse | null>(null);
-  const [pool, setPool] = useState<MatchCardResponse[]>([]);
   const [score, setScore] = useState(0);
 
   const [selected, setSelected] = useState<string[]>([]);
   const [matched, setMatched] = useState<string[]>([]);
   const [mismatched, setMismatched] = useState<string[]>([]);
+
+  // Refs to hold the mutable game state — avoids stale closures entirely
+  const poolRef = useRef<MatchCardResponse[]>([]);
+  const matchCardsRef = useRef<MatchCard[]>([]);
+  const matchedRef = useRef<string[]>([]);
 
   const { elapsed, reset: resetTimer } = useTimer(screen === "play");
 
@@ -265,35 +269,57 @@ export default function MatchMode({ studySetId }: { studySetId: number }) {
       }).then(res => {
         if (res.correct) {
           setScore(res.score);
-          setMatched((m) => {
-            const newMatched = [...m, id1!, id2!];
-            if (res.completed) {
-              setTimeout(() => setScreen("result"), 400);
-            } else if (newMatched.length === matchCards.length) {
-              // Load next batch
-              setTimeout(() => {
-                const nextBatch = pool.slice(0, MAX_PAIRS);
-                setPool(pool.slice(MAX_PAIRS));
-                setMatchCards(buildCardsFromBatch(nextBatch));
-                setMatched([]);
-              }, 400);
-            }
-            return newMatched;
+
+          // Update matched ref imperatively
+          const newMatched = [...matchedRef.current, id1!, id2!];
+          matchedRef.current = newMatched;
+          setMatched(newMatched);
+          setSelected([]);
+
+          const batchSize = matchCardsRef.current.length;
+          const poolSize = poolRef.current.length;
+
+          console.log("[Match] Correct!", {
+            matchedCount: newMatched.length,
+            batchSize,
+            poolSize,
+            completed: res.completed,
           });
+
+          // Check if current batch is fully matched
+          if (newMatched.length >= batchSize) {
+            if (poolSize === 0) {
+              // All done — show result
+              console.log("[Match] All batches done → showing result");
+              setTimeout(() => setScreen("result"), 500);
+            } else {
+              // Load next batch
+              console.log("[Match] Loading next batch...");
+              setTimeout(() => {
+                const nextBatch = poolRef.current.slice(0, MAX_PAIRS);
+                poolRef.current = poolRef.current.slice(MAX_PAIRS);
+                const newCards = buildCardsFromBatch(nextBatch);
+                matchCardsRef.current = newCards;
+                matchedRef.current = [];
+                setMatchCards(newCards);
+                setMatched([]);
+                setSelected([]);
+              }, 500);
+            }
+          }
         } else {
           setMismatched([id1!, id2!]);
+          setSelected([]);
           setTimeout(() => {
             setMismatched([]);
           }, 500);
         }
-        setSelected([]);
       }).catch(err => {
         console.error(err);
-        // Revert selection on error
         setSelected([]);
       });
     }
-  }, [selected, matchCards, sessionData, pool]);
+  }, [selected, matchCards, sessionData]);
 
   const handleSelect = (id: string) => {
     if (mismatched.length > 0 || matched.includes(id) || selected.length >= 2) return;
@@ -310,9 +336,15 @@ export default function MatchMode({ studySetId }: { studySetId: number }) {
       setScore(0);
       const shuffled = shuffle(res.responses);
       const currentBatch = shuffled.slice(0, MAX_PAIRS);
-      setPool(shuffled.slice(MAX_PAIRS));
-      setMatchCards(buildCardsFromBatch(currentBatch));
-      
+      const remaining = shuffled.slice(MAX_PAIRS);
+      poolRef.current = remaining;
+      const newCards = buildCardsFromBatch(currentBatch);
+      matchCardsRef.current = newCards;
+      matchedRef.current = [];
+      setMatchCards(newCards);
+
+      console.log("[Match] Started!", { totalPairs: res.totalPairs, batchSize: newCards.length, poolSize: remaining.length });
+
       resetTimer();
       setMatched([]);
       setSelected([]);
@@ -324,6 +356,9 @@ export default function MatchMode({ studySetId }: { studySetId: number }) {
 
   const handleReset = () => {
     resetTimer();
+    poolRef.current = [];
+    matchCardsRef.current = [];
+    matchedRef.current = [];
     setMatched([]);
     setSelected([]);
     setMismatched([]);
@@ -390,36 +425,32 @@ export default function MatchMode({ studySetId }: { studySetId: number }) {
       </AnimatePresence>
 
       {/* Screens */}
-      <AnimatePresence mode="wait">
-        {screen === "start" && (
-          <motion.div key="start" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-            <StartScreen total={allCards.length} onStart={handleStart} />
-          </motion.div>
-        )}
+      {screen === "start" && (
+        <motion.div key="start" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+          <StartScreen total={allCards.length} onStart={handleStart} />
+        </motion.div>
+      )}
 
-        {screen === "play" && (
-          <motion.div key="play" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-            <motion.div layout className="grid grid-cols-3 gap-3">
-              {matchCards.map((card) => (
-                <MemCard
-                  key={card.id}
-                  card={card}
-                  isSelected={selected.includes(card.id)}
-                  isMatched={matched.includes(card.id)}
-                  isMismatched={mismatched.includes(card.id)}
-                  onClick={() => handleSelect(card.id)}
-                />
-              ))}
-            </motion.div>
-          </motion.div>
-        )}
+      {screen === "play" && (
+        <div className="grid grid-cols-3 gap-3">
+          {matchCards.map((card) => (
+            <MemCard
+              key={card.id}
+              card={card}
+              isSelected={selected.includes(card.id)}
+              isMatched={matched.includes(card.id)}
+              isMismatched={mismatched.includes(card.id)}
+              onClick={() => handleSelect(card.id)}
+            />
+          ))}
+        </div>
+      )}
 
-        {screen === "result" && (
-          <motion.div key="result" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-            <EndScreen elapsed={elapsed} score={score} onReset={handleReset} studySetId={studySetId} />
-          </motion.div>
-        )}
-      </AnimatePresence>
+      {screen === "result" && (
+        <motion.div key="result" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
+          <EndScreen elapsed={elapsed} score={score} onReset={handleReset} studySetId={studySetId} />
+        </motion.div>
+      )}
     </div>
   );
 }
