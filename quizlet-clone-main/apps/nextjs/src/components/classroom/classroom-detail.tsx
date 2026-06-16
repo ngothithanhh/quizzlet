@@ -343,7 +343,7 @@ function MembersTab({ classId, canManageClass, isOwner, onAdd, currentUserId }: 
 
               <div className="flex items-center gap-4">
                 <div className="text-xs font-medium">
-                  {isOwner && member.userId !== currentUserId ? (
+                  {isOwner && member.userId !== currentUserId && member.role?.toUpperCase() !== 'OWNER' ? (
                     <select 
                       value={member.role}
                       onChange={(e) => handleRoleChange(member.userId, e.target.value)}
@@ -354,8 +354,8 @@ function MembersTab({ classId, canManageClass, isOwner, onAdd, currentUserId }: 
                       <option value="TEACHER">Giáo viên</option>
                     </select>
                   ) : (
-                    <span className={`px-2 py-1 rounded-md ${member.role === 'OWNER' ? 'bg-primary/10 text-primary' : 'bg-muted text-muted-foreground'}`}>
-                      {member.role === 'OWNER' ? 'Chủ sở hữu' : member.role === 'TEACHER' ? 'Giáo viên' : 'Thành viên'}
+                    <span className={`px-2 py-1 rounded-md ${member.role?.toUpperCase() === 'OWNER' ? 'bg-primary/10 text-primary font-semibold' : member.role?.toUpperCase() === 'TEACHER' ? 'bg-blue-500/10 text-blue-500 font-medium' : 'bg-muted text-muted-foreground'}`}>
+                      {member.role?.toUpperCase() === 'OWNER' ? 'Chủ sở hữu' : member.role?.toUpperCase() === 'TEACHER' ? 'Giáo viên' : 'Thành viên'}
                     </span>
                   )}
                 </div>

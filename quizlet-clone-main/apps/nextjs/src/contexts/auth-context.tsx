@@ -25,6 +25,7 @@ interface AuthState {
   isLoading: boolean;
   login: (accessToken: string, refreshToken: string) => void;
   logout: () => Promise<void>;
+  updateUser: (updated: Partial<UserInfo>) => void;
 }
 
 const AuthContext = createContext<AuthState>({
@@ -33,6 +34,7 @@ const AuthContext = createContext<AuthState>({
   isLoading: true,
   login: () => undefined,
   logout: async () => undefined,
+  updateUser: () => undefined,
 });
 
 export function AuthProvider({ children }: PropsWithChildren) {
@@ -44,6 +46,18 @@ export function AuthProvider({ children }: PropsWithChildren) {
     const userInfo = getUserFromToken();
     setUser(userInfo);
     setIsLoading(false);
+
+    if (userInfo) {
+      import("~/lib/api-client").then(({ userApi }) => {
+        userApi.getMyProfile().then((profile) => {
+          setUser((prev) => prev ? { ...prev, username: profile.username, avatarUrl: profile.avatarUrl } : prev);
+        }).catch(() => {});
+      });
+    }
+  }, []);
+
+  const updateUser = useCallback((updated: Partial<UserInfo>) => {
+    setUser((prev) => prev ? { ...prev, ...updated } : prev);
   }, []);
 
   const login = useCallback((accessToken: string, refreshToken: string) => {
@@ -70,7 +84,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
 
   return (
     <AuthContext.Provider
-      value={{ user, isLoggedIn: !!user, isLoading, login, logout }}
+      value={{ user, isLoggedIn: !!user, isLoading, login, logout, updateUser }}
     >
       {children}
     </AuthContext.Provider>

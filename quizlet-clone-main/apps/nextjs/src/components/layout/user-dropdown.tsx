@@ -27,6 +27,7 @@ const UserDropdown = () => {
     <DropdownMenu>
       <DropdownMenuTrigger className="outline-none">
         <Avatar>
+          {user.avatarUrl && <AvatarImage src={user.avatarUrl} alt={user.username || user.email} />}
           <AvatarFallback>{initials}</AvatarFallback>
         </Avatar>
       </DropdownMenuTrigger>

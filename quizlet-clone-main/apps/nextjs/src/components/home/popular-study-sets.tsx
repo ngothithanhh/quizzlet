@@ -32,7 +32,7 @@ const PopularStudySetsGrid = () => {
 const PopularStudySets = () => {
   return (
     <div>
-      <h2 className="mb-6 text-2xl font-bold">Popular study sets</h2>
+      <h2 className="mb-6 text-2xl font-bold">Học phần phổ biến</h2>
       <PopularStudySetsGrid />
     </div>
   );

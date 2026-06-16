@@ -5,7 +5,7 @@ import DeleteAccount from "~/components/settings/delete-account";
 import EditProfilePicture from "~/components/settings/edit-profile-picture";
 
 export const metadata: Metadata = {
-  title: "Quizlet - Settings",
+  title: "Quizzlet - Settings",
 };
 
 export default function Settings() {
