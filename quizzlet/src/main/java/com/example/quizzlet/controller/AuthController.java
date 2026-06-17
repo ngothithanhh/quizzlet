@@ -22,7 +22,6 @@ public class AuthController {
 
     @PostMapping("/register")
     public ResponseEntity<Map<String, String>> register(@RequestBody RegisterRequest request){
-        System.out.println(request.getPassword());
         authService.register(request.getUsername(), request.getEmail(), request.getPassword());
 
         return ResponseEntity.ok(Map.of("message","OTP đã gửi tới email: " + request.getEmail()));

@@ -17,7 +17,7 @@ import java.util.UUID;
 @Service
 public class LocalMediaServiceImpl implements MediaService {
 
-    private static final long MAX_FILE_SIZE = 25 * 1024 * 1024; // 20MB
+    private static final long MAX_FILE_SIZE = 25 * 1024 * 1024; // 25MB
 
     @Override
     public MediaUploadResponse upload(MultipartFile file){
