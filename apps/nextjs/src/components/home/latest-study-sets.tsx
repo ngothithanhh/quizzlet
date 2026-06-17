@@ -3,11 +3,11 @@
 import Empty from "@acme/ui/empty";
 import { Loader2 } from "lucide-react";
 
-import { useAllStudySets } from "~/hooks/use-study-sets";
+import { useLatestStudySets } from "~/hooks/use-study-sets";
 import StudySetCard from "../shared/study-set-card";
 
 const LatestStudySetsGrid = () => {
-  const { data: studySets, isLoading, error } = useAllStudySets();
+  const { data: studySets, isLoading, error } = useLatestStudySets();
 
   if (isLoading) {
     return <div className="flex justify-center p-8"><Loader2 className="animate-spin text-primary" size={24} /></div>;
