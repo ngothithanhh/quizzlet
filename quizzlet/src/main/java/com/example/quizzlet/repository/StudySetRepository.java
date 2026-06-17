@@ -17,4 +17,6 @@ public interface StudySetRepository extends JpaRepository<StudySet, Long> {
 
     List<StudySet> findTop5ByIsPublicTrueOrderByFavoriteCountDesc();
 
+    boolean existsByIdAndUserId(Long studySetId, Long userId);
+
 }

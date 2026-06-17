@@ -58,3 +58,6 @@ dist/
 .turbo/
 .cache/
 coverage/
+
+### Uploaded local files ###
+uploads/

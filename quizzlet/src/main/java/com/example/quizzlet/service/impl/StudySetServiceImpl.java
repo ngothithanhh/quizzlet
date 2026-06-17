@@ -60,6 +60,11 @@ public class StudySetServiceImpl implements StudySetService {
     @Transactional
     @Override
     public StudySetResponse update(Long id, StudySetRequest request){
+        Long userId = SecurityUtils.getCurrentUserId();
+
+        if(!studySetRepository.existsByIdAndUserId(id,userId))
+            throw new RuntimeException("Bạn không có quyền sửa bộ thẻ này!");
+
         StudySet studySet = studySetRepository.findById(id).orElseThrow(()-> new RuntimeException("Không tìm thấy studyset"));
 
         StudySetMapper.updateEntity(studySet,request);
@@ -116,6 +121,12 @@ public class StudySetServiceImpl implements StudySetService {
     @Transactional
     @Override
     public void delete(Long id){
+
+        Long userId = SecurityUtils.getCurrentUserId();
+
+        if(!studySetRepository.existsByIdAndUserId(id,userId))
+            throw new RuntimeException("Bạn không có quyền xóa bộ thẻ này!");
+
         studySetRepository.deleteById(id);
     }
 

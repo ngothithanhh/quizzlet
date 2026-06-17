@@ -21,6 +21,9 @@ public class LocalMediaServiceImpl implements MediaService {
 
     @Override
     public MediaUploadResponse upload(MultipartFile file){
+
+        validateFile(file);
+
         String contentType = file.getContentType();
         MediaType mediaType = detectMediaType(contentType);
         String folder = mediaType == MediaType.IMAGE ? "images" : "audios";
