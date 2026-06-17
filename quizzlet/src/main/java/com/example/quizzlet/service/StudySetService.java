@@ -22,4 +22,8 @@ public interface StudySetService {
     List<StudySetSimpleResponse> getMyStudySets();
 
     StudySetResponse setVisibility(Long id, boolean isPublic);
+
+    List<StudySetSimpleResponse> getLatestStudySets();
+
+    List<StudySetSimpleResponse> getTopFavoritedStudySets();
 }

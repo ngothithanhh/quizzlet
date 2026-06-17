@@ -63,4 +63,14 @@ public class StudySetController {
         studySetService.delete(id);
         return ResponseEntity.noContent().build();
     }
+
+    @GetMapping("/latest")
+    public ResponseEntity<List<StudySetSimpleResponse>> latest(){
+        return ResponseEntity.ok(studySetService.getLatestStudySets());
+    }
+
+    @GetMapping("/top-favorites")
+    public ResponseEntity<List<StudySetSimpleResponse>> topFavorites(){
+        return ResponseEntity.ok(studySetService.getTopFavoritedStudySets());
+    }
 }

@@ -362,6 +362,14 @@ export const studySetApi = {
     return apiFetch<StudySetSimpleResponse[]>(url);
   },
 
+  /** Get latest study sets */
+  getLatest: () =>
+    apiFetch<StudySetSimpleResponse[]>("/api/studysets/latest"),
+
+  /** Get top favorite study sets */
+  getTopFavorites: () =>
+    apiFetch<StudySetSimpleResponse[]>("/api/studysets/top-favorites"),
+
   /** Get the current user's own study sets */
   getMyStudySets: () =>
     apiFetch<StudySetSimpleResponse[]>("/api/studysets/me"),

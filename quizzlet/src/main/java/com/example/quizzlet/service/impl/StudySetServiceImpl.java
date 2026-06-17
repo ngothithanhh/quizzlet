@@ -168,4 +168,16 @@ public class StudySetServiceImpl implements StudySetService {
         studySet.setIsPublic(isPublic);
         return StudySetMapper.toResponse(studySetRepository.save(studySet));
     }
+
+    @Transactional
+    @Override
+    public List<StudySetSimpleResponse> getLatestStudySets(){
+        return studySetRepository.findTop5ByIsPublicTrueOrderByCreatedAtDesc().stream().map(StudySetMapper::toSimpleResponse).toList();
+    }
+
+    @Transactional
+    @Override
+    public List<StudySetSimpleResponse> getTopFavoritedStudySets(){
+        return studySetRepository.findTop5ByIsPublicTrueOrderByFavoriteCountDesc().stream().map(StudySetMapper::toSimpleResponse).toList();
+    }
 }
