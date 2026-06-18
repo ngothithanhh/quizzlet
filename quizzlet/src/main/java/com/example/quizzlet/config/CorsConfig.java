@@ -22,7 +22,8 @@ public class CorsConfig {
                 "http://localhost:19006",
                 "http://localhost:8081",
                 "http://localhost:8082",
-                "http://10.0.2.2:3000"   // Android emulator
+                "http://10.0.2.2:3000",   // Android emulator
+                "https://quizzlet-omega.vercel.app"
         ));
 
         // Allowed HTTP methods
