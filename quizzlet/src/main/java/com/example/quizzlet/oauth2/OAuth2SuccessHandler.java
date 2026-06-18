@@ -53,7 +53,7 @@ public class OAuth2SuccessHandler  implements AuthenticationSuccessHandler {
 
         // Redirect về NextJS
         // Chú ý: Ở môi trường thật, nên lấy domain frontend từ properties (application.yaml).
-        String frontendUrl = "http://localhost:3000";
+        String frontendUrl = "https://quizzlet-omega.vercel.app";
 
         String targetUrl = String.format("%s/api/auth/oauth-callback?accessToken=%s&refreshToken=%s",
                 frontendUrl, accessToken, refreshToken.getToken());
