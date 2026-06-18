@@ -16,8 +16,9 @@ import {
   setTokens,
   type UserInfo,
 } from "~/lib/auth";
+import { env } from "~/env";
 
-const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL ?? "http://localhost:8080/quizzlet";
+const BACKEND_URL = env.NEXT_PUBLIC_BACKEND_URL;
 
 interface AuthState {
   user: UserInfo | null;
