@@ -543,7 +543,7 @@ export const authApi = {
 export const classroomApi = {
   /** Tạo lớp học mới */
   create: (data: ClassroomRequest) =>
-    apiFetch<Record<string, any>>("/api/classroom", {
+    apiFetch<Record<string, any>>("/api/classroom/create", {
       method: "POST",
       body: JSON.stringify(data),
     }),
