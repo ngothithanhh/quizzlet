@@ -6,11 +6,9 @@ import { drizzle } from "drizzle-orm/neon-serverless";
 
 import * as schema from "./schema";
 
-if (!process.env.POSTGRES_URL) {
-  throw new Error("Missing process.env.POSTGRES_URL");
-}
-
-const pool = new Pool({ connectionString: process.env.POSTGRES_URL });
+const pool = new Pool({ 
+  connectionString: process.env.POSTGRES_URL || "postgres://dummy:dummy@localhost/dummy" 
+});
 
 export const db = drizzle({ client: pool, schema, casing: "snake_case" });
 
