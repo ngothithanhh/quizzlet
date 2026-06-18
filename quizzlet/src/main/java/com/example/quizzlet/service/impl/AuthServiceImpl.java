@@ -25,8 +25,20 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     public void register(String username, String email, String password){
-        if(userRepository.findByEmail(email).isPresent())
-            throw new RuntimeException("Email đã tồn tại");
+        User existingUser = userRepository.findByEmail(email).orElse(null);
+        if (existingUser != null) {
+            if (Boolean.TRUE.equals(existingUser.getIsVerified())) {
+                throw new RuntimeException("Email đã tồn tại");
+            }
+
+            if (username != null && password != null) {
+                existingUser.setUsername(username);
+                existingUser.setPassword(passwordEncoder.encode(password));
+                userRepository.save(existingUser);
+            }
+            otpService.generateOtp(email, OtpType.REGISTER);
+            return;
+        }
 
         User user = User.builder()
                 .username(username)
@@ -36,6 +48,18 @@ public class AuthServiceImpl implements AuthService {
                 .build();
 
         userRepository.save(user);
+
+        otpService.generateOtp(email, OtpType.REGISTER);
+    }
+
+    @Override
+    public void resendRegisterOtp(String email) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User không tồn tại"));
+
+        if (Boolean.TRUE.equals(user.getIsVerified())) {
+            throw new RuntimeException("Tài khoản đã được xác thực");
+        }
 
         otpService.generateOtp(email, OtpType.REGISTER);
     }

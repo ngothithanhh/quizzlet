@@ -16,14 +16,13 @@ public class CorsConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
 
-        // Allowed origins - FE (NextJS), Expo
-        configuration.setAllowedOrigins(Arrays.asList(
-                "http://localhost:3000",
-                "http://localhost:19006",
-                "http://localhost:8081",
-                "http://localhost:8082",
-                "http://10.0.2.2:3000",   // Android emulator
-                "https://quizzlet-omega.vercel.app"
+        // Allowed origins - FE (NextJS), Expo, Vercel demo/preview deployments
+        configuration.setAllowedOriginPatterns(Arrays.asList(
+                "http://localhost:*",
+                "http://127.0.0.1:*",
+                "http://10.0.2.2:*",   // Android emulator
+                "https://quizzlet-omega.vercel.app",
+                "https://*.vercel.app"
         ));
 
         // Allowed HTTP methods

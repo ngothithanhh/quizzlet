@@ -27,6 +27,12 @@ public class AuthController {
         return ResponseEntity.ok(Map.of("message","OTP đã gửi tới email: " + request.getEmail()));
     }
 
+    @PostMapping("/register/resend-otp")
+    public ResponseEntity<Map<String, String>> resendRegisterOtp(@RequestParam String email){
+        authService.resendRegisterOtp(email);
+        return ResponseEntity.ok(Map.of("message","OTP đã gửi tới email: " + email));
+    }
+
     @PostMapping("/register/verify")
     public ResponseEntity<?> verifyUser(@RequestBody VerifyOtpRequest request){
         authService.verifyOtp(request.getEmail(), request.getOtp());

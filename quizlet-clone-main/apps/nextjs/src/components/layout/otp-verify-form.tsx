@@ -87,11 +87,12 @@ export default function OtpVerifyForm({
   const handleResend = async () => {
     setResending(true);
     try {
-      const res = await fetch(`${BACKEND_URL}/api/auth/register`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email }),
-      });
+      const res = await fetch(
+        `${BACKEND_URL}/api/auth/register/resend-otp?email=${encodeURIComponent(email)}`,
+        {
+          method: "POST",
+        },
+      );
       if (res.ok) {
         toast.success(`OTP mới đã được gửi tới ${email}`);
         setOtp(["", "", "", "", "", ""]);

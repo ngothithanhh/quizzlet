@@ -4,6 +4,7 @@ import com.example.quizzlet.dto.auth.AuthResponse;
 
 public interface AuthService {
     void register(String username, String email, String password);
+    void resendRegisterOtp(String email);
     void verifyOtp(String email, String otp);
     AuthResponse login(String email, String password);
     AuthResponse refresh(String refreshToken);
