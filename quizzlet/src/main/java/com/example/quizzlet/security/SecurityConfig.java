@@ -37,6 +37,8 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         // Auth endpoints - public
                         .requestMatchers("/auth/**", "/api/auth/**", "/oauth2/**").permitAll()
+                        // Allow Spring Boot error endpoint to pass through
+                        .requestMatchers("/error").permitAll()
                         // Swagger - public
                         .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
                         // CORS preflight
