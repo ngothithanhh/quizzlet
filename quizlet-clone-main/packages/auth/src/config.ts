@@ -4,8 +4,6 @@ import type {
   Session as NextAuthSession,
 } from "next-auth";
 import { DrizzleAdapter } from "@auth/drizzle-adapter";
-import Github from "next-auth/providers/github";
-import Google from "next-auth/providers/google";
 
 import { db } from "@acme/db/client";
 import { Account, Session, User } from "@acme/db/schema";
@@ -30,8 +28,7 @@ export const isSecureContext = env.NODE_ENV !== "development";
 
 export const authConfig = {
   adapter,
-  secret: env.AUTH_SECRET,
-  providers: [Google, Github],
+  providers: [],
   callbacks: {
     session: (opts) => {
       if (!("user" in opts))
