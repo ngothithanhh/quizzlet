@@ -25,7 +25,7 @@ export const env = createEnv({
    */
   client: {
     // NEXT_PUBLIC_CLIENTVAR: z.string(),
-    NEXT_PUBLIC_BACKEND_URL: z.string().default("http://localhost:8080/quizzlet"),
+    NEXT_PUBLIC_BACKEND_URL: z.string().default("https://quizzlet-yxoc.onrender.com/quizzlet"),
     NEXT_PUBLIC_S3_REGION: z.string().default("us-east-1"),
     NEXT_PUBLIC_S3_ACCESS_KEY: z.string().default("dummy"),
     NEXT_PUBLIC_S3_SECRET_KEY: z.string().default("dummy"),
