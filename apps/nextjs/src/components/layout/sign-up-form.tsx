@@ -9,9 +9,9 @@ import { Form, FormField, FormItem, FormMessage, useForm } from "@acme/ui/form";
 import { Input } from "@acme/ui/input";
 import { Label } from "@acme/ui/label";
 import { toast } from "@acme/ui/toast";
+import { env } from "~/env";
 
-const BACKEND_URL =
-  process.env.NEXT_PUBLIC_BACKEND_URL ?? "http://localhost:8080/quizzlet";
+const BACKEND_URL = env.NEXT_PUBLIC_BACKEND_URL;
 
 const registerSchema = z
   .object({

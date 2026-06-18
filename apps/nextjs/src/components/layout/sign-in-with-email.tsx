@@ -12,9 +12,9 @@ import { toast } from "@acme/ui/toast";
 
 import { useAuth } from "~/contexts/auth-context";
 import { useSignInDialogContext } from "~/contexts/sign-in-dialog-context";
+import { env } from "~/env";
 
-const BACKEND_URL =
-  process.env.NEXT_PUBLIC_BACKEND_URL ?? "http://localhost:8080/quizzlet";
+const BACKEND_URL = env.NEXT_PUBLIC_BACKEND_URL;
 
 const loginSchema = z.object({
   email: z.string().min(1, "Nhập email của bạn").email("Email không hợp lệ"),

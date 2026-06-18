@@ -6,9 +6,9 @@ import { LoaderIcon, MailIcon } from "lucide-react";
 import { Button } from "@acme/ui/button";
 import { Input } from "@acme/ui/input";
 import { toast } from "@acme/ui/toast";
+import { env } from "~/env";
 
-const BACKEND_URL =
-  process.env.NEXT_PUBLIC_BACKEND_URL ?? "http://localhost:8080/quizzlet";
+const BACKEND_URL = env.NEXT_PUBLIC_BACKEND_URL;
 
 interface OtpVerifyFormProps {
   email: string;
