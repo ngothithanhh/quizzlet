@@ -5,7 +5,6 @@ import com.example.quizzlet.dto.texttospeech.TextToSpeechResponse;
 import com.example.quizzlet.service.LanguageDetectService;
 import com.example.quizzlet.service.TextToSpeechService;
 import lombok.RequiredArgsConstructor;
-import lombok.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
@@ -18,9 +17,6 @@ import java.util.UUID;
 @Service
 @RequiredArgsConstructor
 public class TextToSpeechServiceImpl implements TextToSpeechService {
-
-//    @Value("${tts.api-key}")
-//    private String apiKey;
 
     private final LanguageDetectService languageDetectService;
     private final RestTemplate restTemplate = new RestTemplate();

@@ -8,16 +8,12 @@ import com.optimaize.langdetect.i18n.LdLocale;
 import com.optimaize.langdetect.ngram.NgramExtractors;
 import com.optimaize.langdetect.profiles.LanguageProfile;
 import com.optimaize.langdetect.profiles.LanguageProfileReader;
-import lombok.RequiredArgsConstructor;
+import jakarta.annotation.PostConstruct;
 import org.springframework.stereotype.Service;
 
-import java.io.IOException;
 import java.util.List;
-import jakarta.annotation.PostConstruct;
-
 
 @Service
-@RequiredArgsConstructor
 public class LanguageDetectServiceImpl implements LanguageDetectService {
 
     private LanguageDetector detector;
@@ -50,10 +46,6 @@ public class LanguageDetectServiceImpl implements LanguageDetectService {
 
         Optional<LdLocale> lang = detector.detect(text);
 
-        if (lang.isPresent()) {
-            return lang.get().getLanguage();
-        }
-
-        return "en";
+        return lang.isPresent() ? lang.get().getLanguage() : "en";
     }
 }
