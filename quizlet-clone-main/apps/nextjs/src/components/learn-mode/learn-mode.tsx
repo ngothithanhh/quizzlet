@@ -86,12 +86,12 @@ function CompletedScreen({
   total,
   masteredCount,
   onRestart,
-  studySetId,
+  backUrl,
 }: {
   total: number;
   masteredCount: number;
   onRestart: () => void;
-  studySetId: number;
+  backUrl: string;
 }) {
   return (
     <motion.div
@@ -126,10 +126,10 @@ function CompletedScreen({
           <RotateCcw size={18} /> Học lại
         </button>
         <Link
-          href={`/study-sets/${studySetId}`}
+          href={backUrl}
           className="flex items-center gap-2 rounded-xl bg-card px-6 py-3 font-semibold text-foreground transition hover:bg-muted"
         >
-          <ArrowLeft size={18} /> Về học phần
+          <ArrowLeft size={18} /> Quay lại
         </Link>
       </div>
     </motion.div>
@@ -139,10 +139,13 @@ function CompletedScreen({
 // ── Main Component ─────────────────────────────────────────────────────────────
 
 interface LearnModeProps {
-  studySetId: number;
+  studySetId?: number;
+  folderId?: number;
+  studySetsId?: number[];
+  backUrl?: string;
 }
 
-export default function LearnMode({ studySetId }: LearnModeProps) {
+export default function LearnMode({ studySetId, folderId, studySetsId, backUrl }: LearnModeProps) {
   const [cards, setCards] = useState<LearnCardResponse[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -158,8 +161,14 @@ export default function LearnMode({ studySetId }: LearnModeProps) {
   const fetchCards = useCallback(() => {
     setIsLoading(true);
     setError(null);
-    learnApi
-      .getCards(studySetId)
+    
+    const fetchPromise = folderId && studySetsId
+      ? learnApi.getCardsByFolderStudySets(folderId, { studySetsId })
+      : studySetId 
+        ? learnApi.getCards(studySetId)
+        : Promise.reject(new Error("Missing study set or folder details"));
+
+    fetchPromise
       .then((data) => {
         setCards(data);
         setInitialTotal(data.length);
@@ -170,7 +179,7 @@ export default function LearnMode({ studySetId }: LearnModeProps) {
       })
       .catch((e: Error) => setError(e.message))
       .finally(() => setIsLoading(false));
-  }, [studySetId]);
+  }, [studySetId, folderId, studySetsId]);
 
   useEffect(() => {
     fetchCards();
@@ -215,7 +224,12 @@ export default function LearnMode({ studySetId }: LearnModeProps) {
   const handleRestart = async () => {
     setIsLoading(true);
     try {
-      await learnApi.reset(studySetId);
+      if (folderId && studySetsId) {
+        // Reset all study sets in the folder
+        await Promise.all(studySetsId.map(id => learnApi.reset(id)));
+      } else if (studySetId) {
+        await learnApi.reset(studySetId);
+      }
     } catch {
       // Non-blocking
     }
@@ -256,7 +270,7 @@ export default function LearnMode({ studySetId }: LearnModeProps) {
         total={cards.length}
         masteredCount={sessionMastered}
         onRestart={handleRestart}
-        studySetId={studySetId}
+        backUrl={backUrl ?? (studySetId ? `/study-sets/${studySetId}` : '/')}
       />
     );
   }

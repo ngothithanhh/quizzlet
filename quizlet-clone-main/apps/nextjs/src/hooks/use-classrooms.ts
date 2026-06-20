@@ -278,7 +278,7 @@ export function useLeaveClassroom() {
 
 // ── useClassMembers ───────────────────────────────────────────────────────────
 
-export function useClassMembers(classId: number | null) {
+export function useClassMembers(classId: number | null, refreshTrigger?: number) {
   const [data, setData] = useState<ClassMemberResponse[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -299,7 +299,7 @@ export function useClassMembers(classId: number | null) {
 
   useEffect(() => {
     void fetch();
-  }, [fetch]);
+  }, [fetch, refreshTrigger]);
 
   return { data, isLoading, error, refetch: fetch };
 }
@@ -408,7 +408,7 @@ export function useUpdateMemberRole() {
 
 // ── useClassStudySets ─────────────────────────────────────────────────────────
 
-export function useClassStudySets(classId: number | null) {
+export function useClassStudySets(classId: number | null, refreshTrigger?: number) {
   const [data, setData] = useState<StudySetResponse[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -429,7 +429,7 @@ export function useClassStudySets(classId: number | null) {
 
   useEffect(() => {
     void fetch();
-  }, [fetch]);
+  }, [fetch, refreshTrigger]);
 
   return { data, isLoading, error, refetch: fetch };
 }
@@ -470,7 +470,7 @@ export function useRemoveStudySet() {
 
 // ── useClassAssignments ───────────────────────────────────────────────────────
 
-export function useClassAssignments(classId: number | null) {
+export function useClassAssignments(classId: number | null, refreshTrigger?: number) {
   const [data, setData] = useState<AssignmentResponse[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -491,7 +491,7 @@ export function useClassAssignments(classId: number | null) {
 
   useEffect(() => {
     void fetch();
-  }, [fetch]);
+  }, [fetch, refreshTrigger]);
 
   return { data, isLoading, error, refetch: fetch };
 }

@@ -48,7 +48,7 @@ public class FlashcardController {
     @PostMapping("/clone")
     public ResponseEntity<Map<String, String>> cloneFlashcards(@Valid @RequestBody CloneFlashcardsRequest request) {
         flashcardService.cloneFlashcards(request);
-        return ResponseEntity.ok(Map.of("message", "Sao chép flashcards thành công"));
+        return ResponseEntity.ok(Map.of("message", "Sao chép các thẻ thành công"));
     }
 
     @PostMapping("/import/{studySetId}")

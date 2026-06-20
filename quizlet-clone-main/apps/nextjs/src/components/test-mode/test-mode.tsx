@@ -177,7 +177,7 @@ export default function TestMode({
 
   // ── Setup View ─────────────────────────────────────────────────────────────
   if (testState === "setup") {
-    if (testId) return null; // Đợi useEffect chuyển sang testing
+    if (testId || !studySet) return null; // Đợi useEffect chuyển sang testing
     
     return (
       <motion.div 
@@ -193,7 +193,7 @@ export default function TestMode({
             <h2 className="text-2xl font-black text-foreground">{studySet.title}</h2>
             <p className="mt-2 text-sm text-muted-foreground leading-relaxed">
               Tùy chỉnh bài thi của bạn. Hệ thống sẽ chọn ngẫu nhiên các câu
-              hỏi trắc nghiệm từ {studySet.totalFlashcards} thẻ học của học phần này.
+              hỏi trắc nghiệm từ {studySet.flashcards.length} thẻ học của học phần này.
             </p>
           </div>
 

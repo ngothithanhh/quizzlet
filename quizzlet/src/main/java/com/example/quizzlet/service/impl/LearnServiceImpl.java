@@ -4,6 +4,7 @@ import com.example.quizzlet.dto.flashcard.FlashcardMediaResponse;
 import com.example.quizzlet.dto.flashcard.FlashcardResponse;
 import com.example.quizzlet.dto.learn.LearnCardRequest;
 import com.example.quizzlet.dto.learn.LearnCardResponse;
+import com.example.quizzlet.dto.learn.LearnStudySetsRequest;
 import com.example.quizzlet.entity.*;
 import com.example.quizzlet.enums.LearnResult;
 import com.example.quizzlet.enums.StudyStatus;
@@ -25,6 +26,7 @@ public class LearnServiceImpl implements LearnService {
     private final StudyProgressRepository studyProgressRepository;
     private final FlashcardRepository flashcardRepository;
     private final LearnAttemptRepository learnAttemptRepository;
+    private final FolderRepository folderRepository;
     @Override
     public void submit(LearnCardRequest request){
         Long userId = SecurityUtils.getCurrentUserId();
@@ -128,35 +130,36 @@ public class LearnServiceImpl implements LearnService {
                     StudyProgress progress = studyProgressRepository.findByUserAndFlashcard(user,flashcard).orElse(null);
                     return progress == null || progress.getStatus() != StudyStatus.MASTERED;
                 })
-                .map(flashcard -> {
-                    StudyProgress progress = studyProgressRepository.findByUserAndFlashcard(user,flashcard).orElse(null);
-
-                    double priotityScore = progress != null ? progress.getPriorityScore() : 0;
-
-                    int memoryLevel = progress != null ? progress.getMemoryLevel() : 0;
-
-                    StudyStatus status = progress != null ? progress.getStatus() : StudyStatus.NEW;
-
-                    return LearnCardResponse.builder()
-                            .flashcardId(flashcard.getId())
-                            .term(flashcard.getTerm())
-                            .definition(flashcard.getDefinition())
-                            .mediaList(flashcard.getMediaList().stream()
-                                    .map(media ->
-                                        FlashcardMediaResponse.builder()
-                                                .id(media.getId())
-                                                .url(media.getUrl())
-                                                .type(media.getType())
-                                                .side(media.getSide())
-                                                .build()
-                                     )
-                                    .toList()
-                            )
-                            .priorityScore(priotityScore)
-                            .memoryLevel(memoryLevel)
-                            .studyStatus(status)
-                            .build();
-                })
+//                .map(flashcard -> {
+//                    StudyProgress progress = studyProgressRepository.findByUserAndFlashcard(user,flashcard).orElse(null);
+//
+//                    double priotityScore = progress != null ? progress.getPriorityScore() : 0;
+//
+//                    int memoryLevel = progress != null ? progress.getMemoryLevel() : 0;
+//
+//                    StudyStatus status = progress != null ? progress.getStatus() : StudyStatus.NEW;
+//
+//                    return LearnCardResponse.builder()
+//                            .flashcardId(flashcard.getId())
+//                            .term(flashcard.getTerm())
+//                            .definition(flashcard.getDefinition())
+//                            .mediaList(flashcard.getMediaList().stream()
+//                                    .map(media ->
+//                                        FlashcardMediaResponse.builder()
+//                                                .id(media.getId())
+//                                                .url(media.getUrl())
+//                                                .type(media.getType())
+//                                                .side(media.getSide())
+//                                                .build()
+//                                     )
+//                                    .toList()
+//                            )
+//                            .priorityScore(priotityScore)
+//                            .memoryLevel(memoryLevel)
+//                            .studyStatus(status)
+//                            .build();
+//                })
+                .map(flashcard -> toLearnCardResponse(user,flashcard))
                 .sorted(Comparator.comparing(LearnCardResponse::getPriorityScore).reversed())
                 .toList();
     }
@@ -173,4 +176,68 @@ public class LearnServiceImpl implements LearnService {
             studyProgressRepository.deleteAll(progressList);
         }
     }
+
+    @Override
+    public List<LearnCardResponse> getCardsByFolderStudySets(Long folderId, List<Long> studySetIds){
+        Long userId = SecurityUtils.getCurrentUserId();
+
+        User user = userRepository.findById(userId).orElseThrow(()->new RuntimeException("Người dùng không tồn tại!"));
+
+        if(!folderRepository.existsByIdAndUserId(folderId, userId)) throw new RuntimeException("Bạn không có quyền học thư mục này!");
+
+        Folder folder = folderRepository.findById(folderId).orElseThrow(() -> new RuntimeException("Không tìm thấy thư mục!"));
+
+        if (studySetIds == null || studySetIds.isEmpty()) throw new RuntimeException("Vui lòng chọn ít nhất một học phần!");
+
+        List<StudySet> selectedStudySets = folder.getStudySets().stream()
+                .filter(studySet -> studySetIds.contains(studySet.getId()))
+                .toList();
+
+        if (selectedStudySets.size() != studySetIds.size()) throw new RuntimeException("Có học phần không thuộc thư mục này!");
+
+
+//        List<StudySet> studySets = studySetRepository.findAllById(studySetIds);
+
+        return selectedStudySets.stream()
+                .flatMap(studySet -> studySet.getFlashcards().stream())
+                .filter(flashcard -> {
+                    StudyProgress progress = studyProgressRepository
+                            .findByUserAndFlashcard(user, flashcard)
+                            .orElse(null);
+
+                    return progress == null || progress.getStatus() != StudyStatus.MASTERED;
+                })
+                .map(flashcard -> toLearnCardResponse(user, flashcard))
+                .sorted(Comparator.comparing(LearnCardResponse::getPriorityScore).reversed())
+                .toList();
+
+    }
+
+    private LearnCardResponse toLearnCardResponse(User user, Flashcard flashcard) {
+        StudyProgress progress = studyProgressRepository
+                .findByUserAndFlashcard(user, flashcard)
+                .orElse(null);
+
+        double priorityScore = progress != null ? progress.getPriorityScore() : 0;
+        int memoryLevel = progress != null ? progress.getMemoryLevel() : 0;
+        StudyStatus status = progress != null ? progress.getStatus() : StudyStatus.NEW;
+
+        return LearnCardResponse.builder()
+                .flashcardId(flashcard.getId())
+                .term(flashcard.getTerm())
+                .definition(flashcard.getDefinition())
+                .mediaList(flashcard.getMediaList().stream()
+                        .map(media -> FlashcardMediaResponse.builder()
+                                .id(media.getId())
+                                .url(media.getUrl())
+                                .type(media.getType())
+                                .side(media.getSide())
+                                .build())
+                        .toList())
+                .priorityScore(priorityScore)
+                .memoryLevel(memoryLevel)
+                .studyStatus(status)
+                .build();
+    }
+
 }

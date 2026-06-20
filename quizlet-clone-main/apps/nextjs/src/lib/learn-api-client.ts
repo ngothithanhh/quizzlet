@@ -33,6 +33,10 @@ export interface LearnCardRequest {
   result: LearnResult;
 }
 
+export interface LearnStudySetsRequest {
+  studySetsId: number[];
+}
+
 // ── Core fetch ─────────────────────────────────────────────────────────────────
 
 async function apiFetch<T>(path: string, options: RequestInit = {}): Promise<T> {
@@ -76,5 +80,12 @@ export const learnApi = {
   reset: (studySetId: number) =>
     apiFetch<void>(`/api/learn/${studySetId}/reset`, {
       method: "POST",
+    }),
+
+  /** Get cards for multiple study sets in a folder */
+  getCardsByFolderStudySets: (folderId: number, data: LearnStudySetsRequest) =>
+    apiFetch<LearnCardResponse[]>(`/api/learn/folder/${folderId}/studysets`, {
+      method: "POST",
+      body: JSON.stringify(data),
     }),
 };

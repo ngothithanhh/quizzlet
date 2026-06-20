@@ -46,10 +46,10 @@ export function useFlashcardsModeSB(studySetIdStr: string) {
     dispatch({ type: "RESET", payload: studySet?.flashcards ?? [] });
   }, [dispatch, studySet]);
 
-  const handleLeft = useCallback(async () => {
+  const handleLeft = useCallback(async (forceSort = false) => {
     if (!currentCard) return;
 
-    if (sorting) {
+    if (sorting || forceSort) {
       dispatch({ type: "MARK_HARD", payload: currentCard });
       await animateMessage(
         messageRef.current,
@@ -68,6 +68,7 @@ export function useFlashcardsModeSB(studySetIdStr: string) {
       );
       dispatch({ type: "NEXT" });
     } else {
+      if (index === 0) return; // Prevent swiping left on the first card
       dispatch({ type: "PREVIOUS" });
       void animateCard(
         cardRef.current,
@@ -75,12 +76,12 @@ export function useFlashcardsModeSB(studySetIdStr: string) {
         { duration: 0.15 },
       );
     }
-  }, [currentCard, sorting, dispatch, animateCard, animateMessage, cardRef, messageRef]);
+  }, [currentCard, sorting, index, dispatch, animateCard, animateMessage, cardRef, messageRef]);
 
-  const handleRight = useCallback(async () => {
+  const handleRight = useCallback(async (forceSort = false) => {
     if (!currentCard) return;
 
-    if (sorting) {
+    if (sorting || forceSort) {
       dispatch({ type: "MARK_KNOWN" });
       await animateMessage(
         messageRef.current,
@@ -97,14 +98,15 @@ export function useFlashcardsModeSB(studySetIdStr: string) {
         { visibility: "hidden" },
         { duration: 0 },
       );
+      dispatch({ type: "NEXT" });
     } else {
       void animateCard(
         cardRef.current,
         { translateX: [60, 0], rotateY: [-15, 0] },
         { duration: 0.15 },
       );
+      dispatch({ type: "NEXT" });
     }
-    dispatch({ type: "NEXT" });
   }, [currentCard, sorting, dispatch, animateCard, animateMessage, cardRef, messageRef]);
 
   const shuffle = useCallback(() => {

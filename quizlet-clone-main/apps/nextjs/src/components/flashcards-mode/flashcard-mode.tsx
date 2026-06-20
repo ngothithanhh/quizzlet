@@ -35,6 +35,8 @@ interface FlashcardModeState {
   hard: FlashcardResponse[];
   mode: StudyMode;
   isCompleted: boolean;
+  autoPlayAudio: boolean;
+  ttsLanguage: string;
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -61,11 +63,13 @@ interface FlipCardProps {
   card: FlashcardResponse;
   fullscreen?: boolean;
   sortMode?: boolean;
+  autoPlayAudio?: boolean;
+  ttsLanguage?: string;
   onSwipeLeft?: () => void;
   onSwipeRight?: () => void;
 }
 
-function FlipCard({ card, fullscreen, sortMode, onSwipeLeft, onSwipeRight }: FlipCardProps) {
+function FlipCard({ card, fullscreen, sortMode, autoPlayAudio, ttsLanguage, onSwipeLeft, onSwipeRight }: FlipCardProps) {
   const [flipped, setFlipped] = useState(false);
   const cardRef = useRef<HTMLDivElement>(null);
   const dragX = useMotionValue(0);
@@ -99,12 +103,26 @@ function FlipCard({ card, fullscreen, sortMode, onSwipeLeft, onSwipeRight }: Fli
   const defImage = card.mediaList?.find(m => m.side === "DEFINITION" && m.type === "IMAGE");
   const defAudio = card.mediaList?.find(m => m.side === "DEFINITION" && m.type === "AUDIO");
 
-  const playAudio = (e: React.MouseEvent, url?: string) => {
-    e.stopPropagation();
+  const playAudio = (e: React.MouseEvent | null, text: string, url?: string) => {
+    if (e) e.stopPropagation();
     if (url) {
       new Audio(url).play().catch(console.error);
+    } else if (text) {
+      const utterance = new SpeechSynthesisUtterance(text);
+      if (ttsLanguage) utterance.lang = ttsLanguage;
+      window.speechSynthesis.speak(utterance);
     }
   };
+
+  useEffect(() => {
+    if (autoPlayAudio) {
+      if (flipped) {
+        playAudio(null, card.definition, defAudio?.url);
+      } else {
+        playAudio(null, card.term, termAudio?.url);
+      }
+    }
+  }, [flipped, autoPlayAudio, card]);
 
   return (
     <div className={`relative w-full ${minH}`} style={{ perspective: 1200 }}>
@@ -144,15 +162,14 @@ function FlipCard({ card, fullscreen, sortMode, onSwipeLeft, onSwipeRight }: Fli
             <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-700/50 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-slate-300">
               Thuật ngữ
             </span>
-            {termAudio && (
-              <button
-                onClick={(e) => playAudio(e, termAudio.url)}
-                className="rounded-full p-2 text-slate-400 transition hover:bg-white/10 hover:text-white"
-                title="Phát âm thanh"
-              >
-                <Volume2 size={20} />
-              </button>
-            )}
+            {/* Render audio button regardless of termAudio existing */}
+            <button
+              onClick={(e) => playAudio(e, card.term, termAudio?.url)}
+              className="rounded-full p-2 text-slate-400 transition hover:bg-white/10 hover:text-white"
+              title="Phát âm thanh"
+            >
+              <Volume2 size={20} />
+            </button>
           </div>
           <div className="flex flex-1 flex-col items-center justify-center px-4 overflow-y-auto mt-2">
             {termImage && (
@@ -174,15 +191,14 @@ function FlipCard({ card, fullscreen, sortMode, onSwipeLeft, onSwipeRight }: Fli
             <span className="inline-flex items-center gap-1.5 rounded-full bg-white/20 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-white">
               Định nghĩa
             </span>
-            {defAudio && (
-              <button
-                onClick={(e) => playAudio(e, defAudio.url)}
-                className="rounded-full p-2 text-primary-foreground transition hover:bg-black/10"
-                title="Phát âm thanh"
-              >
-                <Volume2 size={20} />
-              </button>
-            )}
+            {/* Render audio button regardless of defAudio existing */}
+            <button
+              onClick={(e) => playAudio(e, card.definition, defAudio?.url)}
+              className="rounded-full p-2 text-primary-foreground transition hover:bg-black/10"
+              title="Phát âm thanh"
+            >
+              <Volume2 size={20} />
+            </button>
           </div>
           <div className="flex flex-1 flex-col items-center justify-center px-4 overflow-y-auto mt-2">
             {defImage && (
@@ -206,9 +222,13 @@ interface SettingsPanelProps {
   onToggleMode: () => void;
   onShuffle: () => void;
   onReset: () => void;
+  autoPlayAudio: boolean;
+  onToggleAutoPlay: () => void;
+  ttsLanguage: string;
+  onChangeTtsLanguage: (lang: string) => void;
 }
 
-function SettingsPanel({ mode, onToggleMode, onShuffle, onReset }: SettingsPanelProps) {
+function SettingsPanel({ mode, onToggleMode, onShuffle, onReset, autoPlayAudio, onToggleAutoPlay, ttsLanguage, onChangeTtsLanguage }: SettingsPanelProps) {
   const [open, setOpen] = useState(false);
   return (
     <div className="relative">
@@ -254,6 +274,37 @@ function SettingsPanel({ mode, onToggleMode, onShuffle, onReset }: SettingsPanel
                       className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform ${mode === "sort" ? "translate-x-5" : "translate-x-0.5"}`}
                     />
                   </button>
+                </div>
+
+                <div className="mt-2 flex items-center justify-between rounded-xl bg-card px-4 py-3">
+                  <div>
+                    <p className="text-sm font-semibold text-foreground">Tự động đọc thẻ</p>
+                    <p className="mt-0.5 text-xs text-muted-foreground">Phát âm thanh khi xem</p>
+                  </div>
+                  <button
+                    onClick={onToggleAutoPlay}
+                    className={`relative h-6 w-11 rounded-full transition-colors ${autoPlayAudio ? "bg-violet-600" : "bg-muted"}`}
+                  >
+                    <span
+                      className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform ${autoPlayAudio ? "translate-x-5" : "translate-x-0.5"}`}
+                    />
+                  </button>
+                </div>
+
+                <div className="mt-2 flex flex-col justify-center rounded-xl bg-card px-4 py-3">
+                  <p className="text-sm font-semibold text-foreground mb-2">Ngôn ngữ đọc</p>
+                  <select 
+                    value={ttsLanguage} 
+                    onChange={(e) => onChangeTtsLanguage(e.target.value)}
+                    className="w-full bg-background border border-border rounded-lg px-2 py-1.5 text-sm outline-none focus:ring-1 focus:ring-violet-500"
+                  >
+                    <option value="vi-VN">Tiếng Việt</option>
+                    <option value="en-US">Tiếng Anh</option>
+                    <option value="fr-FR">Tiếng Pháp</option>
+                    <option value="ja-JP">Tiếng Nhật</option>
+                    <option value="ko-KR">Tiếng Hàn</option>
+                    <option value="zh-CN">Tiếng Trung</option>
+                  </select>
                 </div>
 
                 <div className="mt-2 space-y-2">
@@ -337,6 +388,8 @@ export default function FlashcardMode({ studySetId, fullscreen }: FlashcardModeP
     hard: [],
     mode: "browse",
     isCompleted: false,
+    autoPlayAudio: false,
+    ttsLanguage: "vi-VN",
   });
 
   // Fetch cards
@@ -410,6 +463,8 @@ export default function FlashcardMode({ studySetId, fullscreen }: FlashcardModeP
       hard: [],
       mode: state.mode,
       isCompleted: false,
+      autoPlayAudio: state.autoPlayAudio,
+      ttsLanguage: state.ttsLanguage,
     });
   };
 
@@ -427,6 +482,20 @@ export default function FlashcardMode({ studySetId, fullscreen }: FlashcardModeP
     setState((s) => ({
       ...s,
       mode: s.mode === "browse" ? "sort" : "browse",
+    }));
+  };
+
+  const handleToggleAutoPlay = () => {
+    setState((s) => ({
+      ...s,
+      autoPlayAudio: !s.autoPlayAudio,
+    }));
+  };
+
+  const handleChangeTtsLanguage = (lang: string) => {
+    setState((s) => ({
+      ...s,
+      ttsLanguage: lang,
     }));
   };
 
@@ -504,6 +573,8 @@ export default function FlashcardMode({ studySetId, fullscreen }: FlashcardModeP
               card={currentCard}
               fullscreen={fullscreen}
               sortMode={state.mode === "sort"}
+              autoPlayAudio={state.autoPlayAudio}
+              ttsLanguage={state.ttsLanguage}
               onSwipeLeft={goLeft}
               onSwipeRight={goRight}
             />
@@ -561,6 +632,10 @@ export default function FlashcardMode({ studySetId, fullscreen }: FlashcardModeP
             onToggleMode={handleToggleMode}
             onShuffle={handleShuffle}
             onReset={handleReset}
+            autoPlayAudio={state.autoPlayAudio}
+            onToggleAutoPlay={handleToggleAutoPlay}
+            ttsLanguage={state.ttsLanguage}
+            onChangeTtsLanguage={handleChangeTtsLanguage}
           />
           {!fullscreen && (
             <Link

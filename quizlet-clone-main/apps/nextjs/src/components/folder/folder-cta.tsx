@@ -5,7 +5,7 @@ import { Edit } from "lucide-react";
 import { Button } from "@acme/ui/button";
 
 import { useAuth } from "~/contexts/auth-context";
-import { api } from "~/trpc/react";
+import { useFolderDetail } from "~/hooks/use-folders";
 import DeleteFolderDialog from "./delete-folder-dialog";
 import FolderDialog from "./folder-dialog";
 import FolderStudySetsDialog from "./folder-study-sets-dialog";
@@ -15,28 +15,28 @@ interface FolderCTAProps {
 }
 
 const FolderCTA = ({ slug }: FolderCTAProps) => {
-  const [data] = api.folder.bySlug.useSuspenseQuery({ slug });
+  const folderId = Number(slug);
+  const { data: folder, isLoading } = useFolderDetail(folderId);
   const { user } = useAuth();
 
-  if (data.userId !== user?.email) {
+  if (isLoading || !folder || folder.userId !== Number(user?.id)) {
     return null;
   }
 
   return (
     <div className="flex gap-2">
-      <FolderStudySetsDialog userId={data.userId} />
+      <FolderStudySetsDialog userId={folder.userId.toString()} />
       <FolderDialog
         defaultValues={{
-          id: data.id,
-          name: data.name,
-          description: data.description ?? undefined,
+          id: folder.id.toString(),
+          name: folder.name,
         }}
       >
         <Button size="icon" variant="outline">
           <Edit size={16} />
         </Button>
       </FolderDialog>
-      <DeleteFolderDialog id={data.id} userId={user?.email ?? ""} />
+      <DeleteFolderDialog id={folder.id} userId={folder.userId} />
     </div>
   );
 };

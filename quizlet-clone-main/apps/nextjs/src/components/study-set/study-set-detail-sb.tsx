@@ -18,6 +18,7 @@ import {
   Download,
   Upload,
   Volume2,
+  Copy,
 } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 
@@ -29,6 +30,8 @@ import { useCreateFlashcard, useDeleteFlashcard, useUpdateFlashcard } from "~/ho
 import { useDeleteStudySet, useSetVisibility, useFavorites } from "~/hooks/use-study-sets";
 import { useRouter } from "next/navigation";
 import FlashcardMode from "~/components/flashcards-mode/flashcard-mode";
+import AddToFolderDialog from "~/components/folder/add-to-folder-dialog";
+import StudySetCloneDialog from "~/components/study-set/study-set-clone-dialog";
 
 // ── Study Modes Config ─────────────────────────────────────────────────────────
 
@@ -323,6 +326,8 @@ export default function StudySetDetailSB({ studySetId }: { studySetId: number })
   const router = useRouter();
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [activeTab, setActiveTab] = useState<ActiveTab>("flashcards");
+  const [isFolderDialogOpen, setIsFolderDialogOpen] = useState(false);
+  const [isCloneDialogOpen, setIsCloneDialogOpen] = useState(false);
 
   const isFavorited = myFavorites.some(set => set.id === studySetId);
 
@@ -399,6 +404,22 @@ export default function StudySetDetailSB({ studySetId }: { studySetId: number })
               <Layers size={11} />
               {studySet.flashcards.length} thẻ
             </span>
+            <span>·</span>
+            <button
+              onClick={() => setIsFolderDialogOpen(true)}
+              className="flex items-center gap-1.5 transition hover:text-foreground text-violet-400 font-medium"
+            >
+              <Plus size={12} />
+              Lưu vào thư mục
+            </button>
+            <span>·</span>
+            <button
+              onClick={() => setIsCloneDialogOpen(true)}
+              className="flex items-center gap-1.5 transition hover:text-foreground text-blue-400 font-medium"
+            >
+              <Copy size={12} />
+              Sao chép
+            </button>
           </div>
         </div>
 
@@ -458,7 +479,7 @@ export default function StudySetDetailSB({ studySetId }: { studySetId: number })
           Chọn chế độ học
         </h2>
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-          {STUDY_MODES.map(({ emoji, icon, label, desc, badge, badgeColor, href, gradient, border }) => (
+          {STUDY_MODES.map(({ icon, label, desc, badge, badgeColor, href, gradient, border }) => (
             <Link
               key={label}
               href={href(studySet.id)}
@@ -472,7 +493,6 @@ export default function StudySetDetailSB({ studySetId }: { studySetId: number })
               {/* Label */}
               <div className="flex items-start justify-between gap-1">
                 <p className="text-sm font-bold text-foreground leading-tight">{label}</p>
-                <span className="text-lg leading-none">{emoji}</span>
               </div>
 
               {/* Desc */}
@@ -581,6 +601,20 @@ export default function StudySetDetailSB({ studySetId }: { studySetId: number })
           </motion.div>
         )}
       </AnimatePresence>
+
+      <AddToFolderDialog
+        open={isFolderDialogOpen}
+        onOpenChange={setIsFolderDialogOpen}
+        studySetId={studySet.id}
+      />
+
+      <StudySetCloneDialog
+        open={isCloneDialogOpen}
+        onOpenChange={setIsCloneDialogOpen}
+        sourceId={studySet.id}
+        sourceTitle={studySet.title}
+        flashcards={studySet.flashcards}
+      />
     </div>
   );
 }

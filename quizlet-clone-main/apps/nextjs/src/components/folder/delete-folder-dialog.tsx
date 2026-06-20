@@ -16,22 +16,22 @@ import {
 } from "@acme/ui/dialog";
 import { toast } from "@acme/ui/toast";
 
-import { api } from "~/trpc/react";
+import { useDeleteFolder } from "~/hooks/use-folders";
 
-const DeleteFolderDialog = ({ id, userId }: { id: string; userId: string }) => {
-  const { mutate, isPending } = api.folder.delete.useMutation({
-    onSuccess() {
-      toast.success("Đã xóa thư mục thành công");
-      router.push(`/users/${userId}/folders`);
-    },
-    onError() {
-      toast.error("Không thể xóa thư mục, vui lòng thử lại");
-    },
-  });
+const DeleteFolderDialog = ({ id, userId }: { id: string | number; userId: string | number }) => {
+  const { mutate, isPending } = useDeleteFolder();
   const router = useRouter();
 
   const deleteFolder = () => {
-    mutate({ id });
+    mutate(Number(id), {
+      onSuccess() {
+        toast.success("Đã xóa thư mục thành công");
+        router.push(`/users/${userId}/folders`);
+      },
+      onError() {
+        toast.error("Không thể xóa thư mục, vui lòng thử lại");
+      },
+    });
   };
 
   return (

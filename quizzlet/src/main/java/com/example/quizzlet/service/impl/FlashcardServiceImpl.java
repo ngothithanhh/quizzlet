@@ -201,8 +201,7 @@ public class FlashcardServiceImpl implements FlashcardService {
             return;
         }
 
-        Integer maxPosition = flashcardRepository
-                .findMaxPositionByStudySetId(targetStudySet.getId());
+        Integer maxPosition = flashcardRepository.findMaxPositionByStudySetId(targetStudySet.getId());
 
         int nextPosition;
         if(maxPosition != null) nextPosition = maxPosition+1;

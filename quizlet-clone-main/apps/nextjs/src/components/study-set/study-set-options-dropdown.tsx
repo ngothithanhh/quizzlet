@@ -2,6 +2,7 @@
 
 import { useRef, useState } from "react";
 import {
+  CopyIcon,
   DownloadIcon,
   Ellipsis,
   MergeIcon,
@@ -26,6 +27,8 @@ import DeleteStudySetDialog from "./delete-study-set-dialog";
 import StudySetCombineDialog from "./study-set-combine-dialog";
 import StudySetExportDialog from "./study-set-export-dialog";
 import StudySetToPrint from "./study-set-to-print";
+import StudySetCloneDialog from "./study-set-clone-dialog";
+import type { FlashcardResponse } from "~/lib/api-client";
 
 const StudySetOptionsDropdown = ({
   isOwner,
@@ -39,12 +42,17 @@ const StudySetOptionsDropdown = ({
   const [deleteDialogOpen, setDeleteDialogOpen] = useState<boolean>(false);
   const [exportDialogOpen, setExportDialogOpen] = useState<boolean>(false);
   const [combineDialogOpen, setCombineDialogOpen] = useState<boolean>(false);
+  const [cloneDialogOpen, setCloneDialogOpen] = useState<boolean>(false);
   const utils = api.useUtils();
   const contentRef = useRef<HTMLDivElement>(null);
   const handlePrint = useReactToPrint({ contentRef });
 
   const openCombineDialog = () => {
     setCombineDialogOpen(true);
+  };
+
+  const openCloneDialog = () => {
+    setCloneDialogOpen(true);
   };
 
   const openDeleteDialog = () => {
@@ -75,10 +83,16 @@ const StudySetOptionsDropdown = ({
           <DropdownMenuLabel>More</DropdownMenuLabel>
           <DropdownMenuSeparator />
           {userId && (
-            <DropdownMenuItem onClick={openCombineDialog}>
-              <MergeIcon size={16} className="mr-2" />
-              Combine
-            </DropdownMenuItem>
+            <>
+              <DropdownMenuItem onClick={openCloneDialog}>
+                <CopyIcon size={16} className="mr-2" />
+                Sao chép flashcard
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={openCombineDialog}>
+                <MergeIcon size={16} className="mr-2" />
+                Combine
+              </DropdownMenuItem>
+            </>
           )}
           <DropdownMenuItem onClick={() => handlePrint()}>
             <PrinterIcon size={16} className="mr-2" />
@@ -105,6 +119,15 @@ const StudySetOptionsDropdown = ({
           open={combineDialogOpen}
           onOpenChange={setCombineDialogOpen}
           userId={userId}
+        />
+      )}
+      {userId && (
+        <StudySetCloneDialog
+          sourceId={Number(id)}
+          sourceTitle={studySet?.title}
+          flashcards={(studySet?.flashcards as unknown as FlashcardResponse[]) ?? []}
+          open={cloneDialogOpen}
+          onOpenChange={setCloneDialogOpen}
         />
       )}
       {isOwner && (

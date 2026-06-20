@@ -71,8 +71,9 @@ export interface StudySetSimpleResponse {
 }
 
 export interface CloneFlashcardsRequest {
-  sourceStudySetId: number;
   targetStudySetId: number;
+  sourceStudySetId?: number;
+  sourceFlashcardIds?: number[];
 }
 
 export interface MatchCardResponse {
@@ -398,6 +399,7 @@ export const studySetApi = {
 };
 
 // ── Flashcard API ─────────────────────────────────────────────────────────────
+
 
 export const flashcardApi = {
   /** Create a single flashcard */
@@ -777,5 +779,86 @@ export const mediaApi = {
 
     return response.json() as Promise<MediaUploadResponse>;
   },
+};
+
+// ── Text To Speech API ────────────────────────────────────────────────────────
+
+export interface TextToSpeechRequest {
+  text: string;
+  languageCode: string;
+  voiceName?: string;
+}
+
+export interface TextToSpeechResponse {
+  audioUrl: string;
+}
+
+export const ttsApi = {
+  synthesize: (data: TextToSpeechRequest) =>
+    apiFetch<TextToSpeechResponse>("/api/tts", {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
+};
+
+// ── Folder API ────────────────────────────────────────────────────────────────
+
+export interface FolderRequest {
+  name: string;
+  description?: string;
+}
+
+export interface FolderResponse {
+  id: number;
+  name: string;
+  userId: number;
+  userName: string;
+  studySets: StudySetSimpleResponse[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface FolderSimpleResponse {
+  id: number;
+  name: string;
+  userId: number;
+  userName: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export const folderApi = {
+  create: (data: FolderRequest) =>
+    apiFetch<FolderResponse>("/api/folders/create", {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
+
+  update: (id: number, data: FolderRequest) =>
+    apiFetch<FolderResponse>(`/api/folders/update/${id}`, {
+      method: "PUT",
+      body: JSON.stringify(data),
+    }),
+
+  delete: (id: number) =>
+    apiFetch<string>(`/api/folders/delete/${id}`, {
+      method: "DELETE",
+    }),
+
+  getById: (id: number) =>
+    apiFetch<FolderResponse>(`/api/folders/${id}`),
+
+  getMyFolders: () =>
+    apiFetch<FolderSimpleResponse[]>("/api/folders/get-all"),
+
+  addStudySet: (folderId: number, studySetId: number) =>
+    apiFetch<FolderResponse>(`/api/folders/add-studyset/${folderId}/${studySetId}`, {
+      method: "POST",
+    }),
+
+  removeStudySet: (folderId: number, studySetId: number) =>
+    apiFetch<FolderResponse>(`/api/folders/delete-studyset/${folderId}/${studySetId}`, {
+      method: "DELETE",
+    }),
 };
 

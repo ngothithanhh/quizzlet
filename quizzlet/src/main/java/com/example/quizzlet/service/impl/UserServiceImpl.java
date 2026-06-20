@@ -62,6 +62,7 @@ public class UserServiceImpl implements UserService {
         }
 
         List<UserSearchResponse> results = userRepository.searchUsers(query.trim()).stream()
+                .filter(user -> user.getIsVerified())
                 .limit(10)
                 .map(user -> UserSearchResponse.builder()
                         .id(user.getId())

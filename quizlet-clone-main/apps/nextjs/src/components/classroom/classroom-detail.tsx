@@ -53,6 +53,12 @@ export default function ClassroomDetail({ classId }: Props) {
   const { data: classroom, isLoading, error, refetch } = useClassroom(classId);
 
   const [activeTab, setActiveTab] = useState<"studysets" | "members" | "assignments">("studysets");
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
+
+  const handleSuccess = () => {
+    refetch(); // Cập nhật lại thông tin tổng quan của lớp (số lượng...)
+    setRefreshTrigger((prev) => prev + 1); // Cập nhật lại nội dung các tab
+  };
 
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isAddStudySetModalOpen, setIsAddStudySetModalOpen] = useState(false);
@@ -192,13 +198,13 @@ export default function ClassroomDetail({ classId }: Props) {
       {/* TAB CONTENT */}
       <div>
         {activeTab === "studysets" && (
-          <StudySetsTab classId={classId} canManageClass={canManageClass} onAdd={() => setIsAddStudySetModalOpen(true)} />
+          <StudySetsTab classId={classId} canManageClass={canManageClass} onAdd={() => setIsAddStudySetModalOpen(true)} refreshTrigger={refreshTrigger} />
         )}
         {activeTab === "members" && (
-          <MembersTab classId={classId} canManageClass={canManageClass} isOwner={isOwner} onAdd={() => setIsAddMemberModalOpen(true)} currentUserId={user?.id} />
+          <MembersTab classId={classId} canManageClass={canManageClass} isOwner={isOwner} onAdd={() => setIsAddMemberModalOpen(true)} currentUserId={user?.id ? Number(user.id) : undefined} refreshTrigger={refreshTrigger} />
         )}
         {activeTab === "assignments" && (
-          <AssignmentsTab classId={classId} canManageClass={canManageClass} onAdd={() => setIsCreateAssignmentModalOpen(true)} />
+          <AssignmentsTab classId={classId} canManageClass={canManageClass} onAdd={() => setIsCreateAssignmentModalOpen(true)} refreshTrigger={refreshTrigger} />
         )}
       </div>
 
@@ -206,26 +212,28 @@ export default function ClassroomDetail({ classId }: Props) {
         isOpen={isEditModalOpen}
         onClose={() => setIsEditModalOpen(false)}
         classroom={classroom}
-        onSuccess={() => refetch()}
+        onSuccess={handleSuccess}
       />
 
       <AddStudySetModal
         isOpen={isAddStudySetModalOpen}
         onClose={() => setIsAddStudySetModalOpen(false)}
         classId={classId}
-        onSuccess={() => refetch()}
+        onSuccess={handleSuccess}
       />
 
       <AddMemberModal
         isOpen={isAddMemberModalOpen}
         onClose={() => setIsAddMemberModalOpen(false)}
         classId={classId}
+        onSuccess={handleSuccess}
       />
 
       <CreateAssignmentModal
         isOpen={isCreateAssignmentModalOpen}
         onClose={() => setIsCreateAssignmentModalOpen(false)}
         classId={classId}
+        onSuccess={handleSuccess}
       />
     </div>
   );
@@ -233,8 +241,8 @@ export default function ClassroomDetail({ classId }: Props) {
 
 // ── Tab Components ──────────────────────────────────────────────────────────
 
-function StudySetsTab({ classId, canManageClass, onAdd }: { classId: number, canManageClass: boolean, onAdd: () => void }) {
-  const { data: studySets, isLoading, error, refetch } = useClassStudySets(classId);
+function StudySetsTab({ classId, canManageClass, onAdd, refreshTrigger }: { classId: number, canManageClass: boolean, onAdd: () => void, refreshTrigger?: number }) {
+  const { data: studySets, isLoading, error, refetch } = useClassStudySets(classId, refreshTrigger);
   const { mutate: removeStudySet, isPending } = useRemoveStudySet();
 
   const handleRemove = (studySetId: number) => {
@@ -296,8 +304,8 @@ function StudySetsTab({ classId, canManageClass, onAdd }: { classId: number, can
   );
 }
 
-function MembersTab({ classId, canManageClass, isOwner, onAdd, currentUserId }: { classId: number, canManageClass: boolean, isOwner: boolean, onAdd: () => void, currentUserId?: number }) {
-  const { data: members, isLoading, error, refetch } = useClassMembers(classId);
+function MembersTab({ classId, canManageClass, isOwner, onAdd, currentUserId, refreshTrigger }: { classId: number, canManageClass: boolean, isOwner: boolean, onAdd: () => void, currentUserId?: number, refreshTrigger?: number }) {
+  const { data: members, isLoading, error, refetch } = useClassMembers(classId, refreshTrigger);
   const { mutate: removeMember, isPending: isRemoving } = useRemoveMember();
   const { mutate: updateRole, isPending: isUpdating } = useUpdateMemberRole();
 
@@ -380,8 +388,8 @@ function MembersTab({ classId, canManageClass, isOwner, onAdd, currentUserId }: 
   );
 }
 
-function AssignmentsTab({ classId, canManageClass, onAdd }: { classId: number, canManageClass: boolean, onAdd: () => void }) {
-  const { data: assignments, isLoading, error } = useClassAssignments(classId);
+function AssignmentsTab({ classId, canManageClass, onAdd, refreshTrigger }: { classId: number, canManageClass: boolean, onAdd: () => void, refreshTrigger?: number }) {
+  const { data: assignments, isLoading, error } = useClassAssignments(classId, refreshTrigger);
 
   if (isLoading) return <div className="flex justify-center py-8"><Loader2 className="animate-spin text-primary/50" /></div>;
   if (error) return <div className="text-destructive text-sm bg-destructive/10 p-4 rounded-xl">{error}</div>;
@@ -619,7 +627,7 @@ function AddStudySetModal({ isOpen, onClose, classId, onSuccess }: any) {
   );
 }
 
-function AddMemberModal({ isOpen, onClose, classId }: any) {
+function AddMemberModal({ isOpen, onClose, classId, onSuccess }: any) {
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<UserSearchResponse[]>([]);
   const [isSearching, setIsSearching] = useState(false);
@@ -669,7 +677,7 @@ function AddMemberModal({ isOpen, onClose, classId }: any) {
     if (!selectedUser) return;
     addMember(
       { classId, data: { userId: selectedUser.id, role } },
-      { onSuccess: () => { refetch(); onClose(); setSelectedUser(null); setSearchQuery(""); setSearchResults([]); } }
+      { onSuccess: () => { refetch(); if(onSuccess) onSuccess(); onClose(); setSelectedUser(null); setSearchQuery(""); setSearchResults([]); } }
     );
   };
 
@@ -738,7 +746,7 @@ function AddMemberModal({ isOpen, onClose, classId }: any) {
   );
 }
 
-function CreateAssignmentModal({ isOpen, onClose, classId }: any) {
+function CreateAssignmentModal({ isOpen, onClose, classId, onSuccess }: any) {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [studySetId, setStudySetId] = useState("");
@@ -789,6 +797,7 @@ function CreateAssignmentModal({ isOpen, onClose, classId }: any) {
         {
           onSuccess: () => {
             refetch();
+            if(onSuccess) onSuccess();
             onClose();
             // Reset form
             setTitle("");

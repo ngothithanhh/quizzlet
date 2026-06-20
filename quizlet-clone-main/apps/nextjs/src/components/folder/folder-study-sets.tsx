@@ -5,12 +5,15 @@ import { useParams } from "next/navigation";
 
 import Empty from "@acme/ui/empty";
 
-import { api } from "~/trpc/react";
+import { useFolderDetail } from "~/hooks/use-folders";
 import StudySetCard from "../shared/study-set-card";
 
 const FolderStudySets = () => {
   const { slug }: { slug: string } = useParams();
-  const [folder] = api.folder.bySlug.useSuspenseQuery({ slug });
+  const folderId = Number(slug);
+  const { data: folder, isLoading } = useFolderDetail(folderId);
+
+  if (isLoading || !folder) return null;
 
   if (folder.studySets.length === 0) {
     return <Empty message="Folder is empty" />;
@@ -24,9 +27,9 @@ const FolderStudySets = () => {
           studySet={{
             id: Number(studySet.id),
             title: studySet.title,
-            username: studySet.user.name ?? "User",
-            totalFlashcards: studySet.flashcardCount,
-            description: "",
+            username: studySet.username || "User",
+            totalFlashcards: studySet.totalFlashcards || 0,
+            description: studySet.description || "",
             isPublic: true,
             favoriteCount: 0
           }} 

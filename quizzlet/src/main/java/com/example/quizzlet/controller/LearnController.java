@@ -2,6 +2,7 @@ package com.example.quizzlet.controller;
 
 import com.example.quizzlet.dto.learn.LearnCardRequest;
 import com.example.quizzlet.dto.learn.LearnCardResponse;
+import com.example.quizzlet.dto.learn.LearnStudySetsRequest;
 import com.example.quizzlet.service.LearnService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -31,5 +32,10 @@ public class LearnController {
     public ResponseEntity<Void> resetProgress(@PathVariable Long studySetId) {
         learnService.resetProgress(studySetId);
         return ResponseEntity.ok().build();
+    }
+
+    @PostMapping("/folder/{folderId}/studysets")
+    public ResponseEntity<List<LearnCardResponse>> getLearnCardsByFolderStudySets(@PathVariable Long folderId, @RequestBody LearnStudySetsRequest request) {
+        return ResponseEntity.ok(learnService.getCardsByFolderStudySets(folderId, request.getStudySetsId()));
     }
 }

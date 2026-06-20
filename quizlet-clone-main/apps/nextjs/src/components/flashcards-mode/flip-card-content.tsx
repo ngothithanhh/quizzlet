@@ -2,7 +2,8 @@
 
 import type { FlashcardResponse } from "~/lib/api-client";
 import { cn } from "@acme/ui";
-import { Volume2 } from "lucide-react";
+import { Volume2, Loader2 } from "lucide-react";
+import { useTextToSpeech } from "~/hooks/use-tts";
 
 interface FlipCardContentProps {
   flashcard: FlashcardResponse;
@@ -17,11 +18,15 @@ const FlipCardContent = ({ flashcard, back }: FlipCardContentProps) => {
   const imageMedia = flashcard.mediaList?.find(m => m.side === side && m.type === "IMAGE");
   const audioMedia = flashcard.mediaList?.find(m => m.side === side && m.type === "AUDIO");
 
-  const playAudio = (e: React.MouseEvent) => {
+  const { playText, isSynthesizing } = useTextToSpeech();
+
+  const playAudio = async (e: React.MouseEvent) => {
     e.stopPropagation();
     if (audioMedia?.url) {
       const audio = new Audio(audioMedia.url);
       audio.play().catch(console.error);
+    } else {
+      await playText(content);
     }
   };
 
@@ -52,18 +57,18 @@ const FlipCardContent = ({ flashcard, back }: FlipCardContentProps) => {
           >
             {label}
           </span>
-          {audioMedia && (
-            <button
-              onClick={playAudio}
-              className={cn(
-                "rounded-full p-2 transition hover:bg-black/10 dark:hover:bg-white/10",
-                back ? "text-primary-foreground" : "text-muted-foreground hover:text-foreground"
-              )}
-              title="Phát âm thanh"
-            >
-              <Volume2 size={20} />
-            </button>
-          )}
+          <button
+            onClick={playAudio}
+            disabled={isSynthesizing}
+            className={cn(
+              "rounded-full p-2 transition hover:bg-black/10 dark:hover:bg-white/10",
+              back ? "text-primary-foreground" : "text-muted-foreground hover:text-foreground",
+              isSynthesizing && "opacity-50 cursor-not-allowed"
+            )}
+            title="Phát âm thanh"
+          >
+            {isSynthesizing ? <Loader2 size={20} className="animate-spin" /> : <Volume2 size={20} />}
+          </button>
         </div>
 
         {/* Content */}

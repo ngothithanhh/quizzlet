@@ -12,7 +12,7 @@ import NotificationDropdown from "./notification-dropdown";
 import GlobalSearch from "./global-search";
 
 const Navbar = () => {
-  const { isLoggedIn, isLoading } = useAuth();
+  const { isLoggedIn, isLoading, user } = useAuth();
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 shadow-sm">
@@ -32,6 +32,14 @@ const Navbar = () => {
                 className="transition-colors hover:text-primary text-foreground/70"
               >
                 Học phần của tôi
+              </Link>
+            )}
+            {isLoggedIn && user && (
+              <Link
+                href={`/users/${user.id}/folders`}
+                className="transition-colors hover:text-primary text-foreground/70"
+              >
+                Thư mục
               </Link>
             )}
             {isLoggedIn && (

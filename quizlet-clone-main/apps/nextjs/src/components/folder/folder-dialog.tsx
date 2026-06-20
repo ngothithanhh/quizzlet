@@ -30,7 +30,7 @@ import { Textarea } from "@acme/ui/textarea";
 import { toast } from "@acme/ui/toast";
 import { CreateFolderSchema, EditFolderSchema } from "@acme/validators";
 
-import { api } from "~/trpc/react";
+import { useCreateFolder, useUpdateFolder } from "~/hooks/use-folders";
 
 interface FolderDialogProps {
   children?: ReactNode;
@@ -45,63 +45,60 @@ const FolderDialog = ({
   onOpenChange,
   defaultValues,
 }: FolderDialogProps) => {
-  const utils = api.useUtils();
+  const { mutate: createFolder, isPending: isCreating } = useCreateFolder();
+  const { mutate: updateFolder, isPending: isUpdating } = useUpdateFolder();
+
   const form = useForm({
     schema: defaultValues ? EditFolderSchema : CreateFolderSchema,
     defaultValues: defaultValues ?? {
       name: "",
-      description: "",
-    },
-  });
-  const create = api.folder.create.useMutation({
-    async onSuccess(data) {
-      await utils.folder.invalidate();
-      toast.success(
-        <span>
-          Đã tạo thư mục mới, xem{" "}
-          <Link
-            href={`/users/${data.userId}/folders/${data.slug}`}
-            className="underline"
-          >
-            tại đây
-          </Link>
-        </span>,
-      );
-      form.reset();
-      if (onOpenChange) {
-        onOpenChange(false);
-      }
-    },
-    onError() {
-      toast.error("Không thể tạo thư mục, vui lòng thử lại");
-    },
-  });
-  const edit = api.folder.edit.useMutation({
-    async onSuccess(data) {
-      await utils.folder.invalidate();
-      toast.success("Đã lưu thư mục");
-      form.reset({
-        name: data.name,
-        description: data.description ?? undefined,
-      });
-      if (onOpenChange) {
-        onOpenChange(false);
-      }
-    },
-    onError() {
-      toast.error("Không thể lưu thư mục. Vui lòng thử lại");
     },
   });
 
   function onSubmit(values: EditFolderValues | CreateFolderValues) {
     if ("id" in values) {
-      edit.mutate(values);
+      updateFolder(
+        { id: Number(values.id), data: values },
+        {
+          onSuccess() {
+            toast.success("Đã lưu thư mục");
+            if (onOpenChange) {
+              onOpenChange(false);
+            }
+            // You might want to trigger a refetch here via queryClient or let the parent do it
+          },
+          onError() {
+            toast.error("Không thể lưu thư mục. Vui lòng thử lại");
+          },
+        }
+      );
     } else {
-      create.mutate(values);
+      createFolder(values, {
+        onSuccess(data) {
+          toast.success(
+            <span>
+              Đã tạo thư mục mới, xem{" "}
+              <Link
+                href={`/users/${data.userId}/folders/${data.id}`}
+                className="underline"
+              >
+                tại đây
+              </Link>
+            </span>
+          );
+          form.reset();
+          if (onOpenChange) {
+            onOpenChange(false);
+          }
+        },
+        onError() {
+          toast.error("Không thể tạo thư mục, vui lòng thử lại");
+        },
+      });
     }
   }
 
-  const isPending = create.isPending || edit.isPending;
+  const isPending = isCreating || isUpdating;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -130,26 +127,6 @@ const FolderDialog = ({
                   </FormControl>
                   <FormDescription>
                     Tên hiển thị công khai của thư mục.
-                  </FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="description"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Mô tả (tuỳ chọn)</FormLabel>
-                  <FormControl>
-                    <Textarea
-                      disabled={isPending}
-                      placeholder="Mô tả ngắn về thư mục này..."
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormDescription>
-                    Mô tả hiển thị công khai của thư mục.
                   </FormDescription>
                   <FormMessage />
                 </FormItem>

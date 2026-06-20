@@ -7,26 +7,28 @@ import { User } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@acme/ui/avatar";
 import { Button } from "@acme/ui/button";
 
-import { api } from "~/trpc/react";
+import { useFolderDetail } from "~/hooks/use-folders";
 
 const FolderAuthor = () => {
   const { slug }: { slug: string } = useParams();
-  const [{ studySets, user }] = api.folder.bySlug.useSuspenseQuery({ slug });
+  const folderId = Number(slug);
+  const { data: folder, isLoading } = useFolderDetail(folderId);
+
+  if (isLoading || !folder) return null;
 
   return (
     <div className="flex items-center gap-6">
-      <span className="text-sm">{studySets.length} sets</span>
+      <span className="text-sm">{folder.studySets.length} sets</span>
       <div className="flex items-center gap-2">
         <span className="text-sm font-semibold">created by</span>
-        <Link href={`/users/${user.id}`} className="flex items-center gap-2">
+        <Link href={`/users/${folder.userId}`} className="flex items-center gap-2">
           <Avatar className="h-6 w-6">
-            <AvatarImage src={user.image ?? undefined} alt="user avatar" />
             <AvatarFallback>
               <User size={16} />
             </AvatarFallback>
           </Avatar>
           <Button className="p-0 text-foreground" variant="link">
-            {user.name}
+            {folder.userName}
           </Button>
         </Link>
       </div>

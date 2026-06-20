@@ -318,3 +318,36 @@ export function useTopFavoriteStudySets() {
 
   return { data, isLoading, error, refetch: fetch };
 }
+
+// ── useCloneFlashcards ────────────────────────────────────────────────────────
+
+export function useCloneFlashcards() {
+  const [isPending, setIsPending] = useState(false);
+
+  const mutate = useCallback(
+    async (
+      data: { sourceStudySetId: number; targetStudySetId: number },
+      options?: {
+        onSuccess?: (result: { message: string }) => void;
+        onError?: (error: Error) => void;
+      },
+    ) => {
+      setIsPending(true);
+      try {
+        const { flashcardApi } = await import("~/lib/api-client");
+        const result = await flashcardApi.clone(data);
+        options?.onSuccess?.(result);
+        return result;
+      } catch (err) {
+        const error = err instanceof Error ? err : new Error("Unknown error");
+        options?.onError?.(error);
+        throw error;
+      } finally {
+        setIsPending(false);
+      }
+    },
+    [],
+  );
+
+  return { mutate, isPending };
+}

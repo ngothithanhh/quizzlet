@@ -2,9 +2,7 @@
 
 import { useParams } from "next/navigation";
 
-import type { RouterOutputs } from "@acme/api";
-
-import { api } from "~/trpc/react";
+import { useAddStudySetToFolder, useRemoveStudySetFromFolder, useFolderDetail } from "~/hooks/use-folders";
 import ToggleCard from "../shared/toggle-card";
 
 export default function FolderStudySetCard({
@@ -12,59 +10,16 @@ export default function FolderStudySetCard({
   isIn,
   folderId,
 }: {
-  studySet: RouterOutputs["folder"]["bySlug"]["studySets"][number];
+  studySet: { id: number; title: string };
   isIn: boolean;
-  folderId: string;
+  folderId: number;
 }) {
-  const { slug }: { slug: string } = useParams();
-  const utils = api.useUtils();
-  const addSet = api.folder.addSet.useMutation({
-    onSettled,
-    onMutate() {
-      const prevData = utils.folder.bySlug.getData({ slug });
-
-      utils.folder.bySlug.setData({ slug }, (old) => {
-        if (!old) {
-          return;
-        }
-
-        return {
-          ...old,
-          studySets: [...old.studySets, studySet].sort((a, b) =>
-            a.title.localeCompare(b.title),
-          ),
-        };
-      });
-
-      return {
-        prevData,
-      };
-    },
-  });
-  const removeSet = api.folder.removeSet.useMutation({
-    onSettled,
-    onMutate({ studySetId }) {
-      const prevData = utils.folder.bySlug.getData({ slug });
-
-      utils.folder.bySlug.setData({ slug }, (old) => {
-        if (!old) {
-          return;
-        }
-
-        return {
-          ...old,
-          studySets: old.studySets.filter((set) => set.id !== studySetId),
-        };
-      });
-
-      return {
-        prevData,
-      };
-    },
-  });
+  const { mutate: addSet } = useAddStudySetToFolder();
+  const { mutate: removeSet } = useRemoveStudySetFromFolder();
+  const { refetch } = useFolderDetail(folderId);
 
   async function onSettled() {
-    await utils.folder.bySlug.invalidate({ slug });
+    await refetch();
   }
 
   function onClick() {
@@ -74,9 +29,9 @@ export default function FolderStudySetCard({
     };
 
     if (isIn) {
-      removeSet.mutate(params);
+      removeSet(params, { onSuccess: onSettled });
     } else {
-      addSet.mutate(params);
+      addSet(params, { onSuccess: onSettled });
     }
   }
 

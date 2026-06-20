@@ -1,25 +1,27 @@
+"use client";
+
 import type { ReactNode } from "react";
-import { notFound } from "next/navigation";
+import { useAuth } from "~/contexts/auth-context";
+import ProfileLayoutClient from "~/components/user/profile-layout-client";
 
-import ProfileLayout from "~/components/user/profile-layout";
-import { api } from "~/trpc/server";
-
-export default async function Layout({
+export default function Layout({
   children,
   params: { id },
 }: {
   children: ReactNode;
   params: { id: string };
 }) {
-  try {
-    const user = await api.user.byId({ id });
+  const { user } = useAuth();
 
-    return (
-      <ProfileLayout user={user}>
-        {children}
-      </ProfileLayout>
-    );
-  } catch {
-    notFound();
-  }
+  const displayUser = {
+    id,
+    name: user?.username ?? user?.email ?? `User ${id}`,
+    image: user?.avatarUrl ?? null,
+  };
+
+  return (
+    <ProfileLayoutClient user={displayUser}>
+      {children}
+    </ProfileLayoutClient>
+  );
 }

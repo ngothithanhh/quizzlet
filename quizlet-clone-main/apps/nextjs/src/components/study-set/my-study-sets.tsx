@@ -161,7 +161,18 @@ export default function MyStudySets() {
   const { data: createdSets = [], isLoading: isLoadingCreated, error: createdError, refetch: refetchCreated } = useMyStudySets();
   const { data: favoriteSets = [], isLoading: isLoadingFavorites, error: favoriteError } = useQuery({
     queryKey: ["my-favorites"],
-    queryFn: () => favoriteApi.getMyFavorites(),
+    queryFn: async () => {
+      const favs = await favoriteApi.getMyFavorites();
+      return favs.map(f => ({
+        id: f.id,
+        title: f.title,
+        description: f.description,
+        isPublic: f.isPublic,
+        favoriteCount: f.favoriteCount,
+        username: f.username,
+        totalFlashcards: f.flashcards?.length ?? 0,
+      } as StudySetSimpleResponse));
+    },
     enabled: isLoggedIn,
   });
 
@@ -256,7 +267,7 @@ export default function MyStudySets() {
 
       {error && (
         <div className="rounded-xl border border-destructive/30 bg-destructive/10 p-4 text-sm text-destructive">
-          Lỗi: {error}
+          Lỗi: {error instanceof Error ? error.message : String(error)}
         </div>
       )}
 
