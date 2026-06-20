@@ -12,6 +12,8 @@ import jakarta.annotation.PostConstruct;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Arrays;
+import com.optimaize.langdetect.i18n.LdLocale;
 
 @Service
 public class LanguageDetectServiceImpl implements LanguageDetectService {
@@ -21,8 +23,23 @@ public class LanguageDetectServiceImpl implements LanguageDetectService {
     @PostConstruct
     public void init() {
         try {
+            List<LdLocale> locales = Arrays.asList(
+                    LdLocale.fromString("en"),
+                    LdLocale.fromString("vi"),
+                    LdLocale.fromString("fr"),
+                    LdLocale.fromString("de"),
+                    LdLocale.fromString("es"),
+                    LdLocale.fromString("ja"),
+                    LdLocale.fromString("ko"),
+                    LdLocale.fromString("zh-CN"),
+                    LdLocale.fromString("zh-TW"),
+                    LdLocale.fromString("ru"),
+                    LdLocale.fromString("it"),
+                    LdLocale.fromString("pt")
+            );
+
             List<LanguageProfile> languageProfiles =
-                    new LanguageProfileReader().readAllBuiltIn();
+                    new LanguageProfileReader().readBuiltIn(locales);
 
             this.detector = LanguageDetectorBuilder.create(NgramExtractors.standard())
                     .withProfiles(languageProfiles)
