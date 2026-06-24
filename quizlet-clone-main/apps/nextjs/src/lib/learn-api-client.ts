@@ -88,4 +88,8 @@ export const learnApi = {
       method: "POST",
       body: JSON.stringify(data),
     }),
+
+  /** Get hard cards for review */
+  getHardCards: (studySetId: number) =>
+    apiFetch<LearnCardResponse[]>(`/api/learn/${studySetId}/hard-cards`),
 };

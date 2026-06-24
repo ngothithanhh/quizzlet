@@ -87,51 +87,98 @@ function CompletedScreen({
   masteredCount,
   onRestart,
   backUrl,
+  studySetId,
+  onRelearn,
 }: {
   total: number;
   masteredCount: number;
   onRestart: () => void;
   backUrl: string;
+  studySetId?: number;
+  onRelearn?: (cards: LearnCardResponse[]) => void;
 }) {
+  const [hardCards, setHardCards] = useState<LearnCardResponse[]>([]);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (!studySetId) return;
+    setLoading(true);
+    learnApi.getHardCards(studySetId)
+      .then((data) => setHardCards(data || []))
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, [studySetId]);
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="flex flex-col items-center gap-6 py-20 text-center"
+      className="flex flex-col items-center gap-6 py-10 w-full max-w-2xl mx-auto"
     >
       <div className="text-8xl">🎓</div>
-      <div>
+      <div className="text-center">
         <h2 className="text-3xl font-black text-foreground">Xuất sắc!</h2>
         <p className="mt-2 text-muted-foreground">
           Bạn vừa hoàn thành một phiên học.
         </p>
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-2 gap-4 w-full">
         <div className="rounded-2xl bg-card px-6 py-4 text-center">
           <p className="text-3xl font-black text-emerald-400">{masteredCount}</p>
           <p className="mt-1 text-xs text-muted-foreground">Thành thạo</p>
         </div>
         <div className="rounded-2xl bg-card px-6 py-4 text-center">
           <p className="text-3xl font-black text-violet-400">{total}</p>
-          <p className="mt-1 text-xs text-muted-foreground">Tổng số thẻ</p>
+          <p className="mt-1 text-xs text-muted-foreground">Tổng số thẻ phiên này</p>
         </div>
       </div>
 
-      <div className="flex flex-col gap-3 sm:flex-row">
+      <div className="flex flex-col gap-3 sm:flex-row mt-4">
         <button
           onClick={onRestart}
           className="flex items-center gap-2 rounded-xl bg-violet-600 px-6 py-3 font-semibold text-primary-foreground transition hover:bg-violet-500"
         >
-          <RotateCcw size={18} /> Học lại
+          <RotateCcw size={18} /> Bắt đầu lại từ đầu
         </button>
         <Link
           href={backUrl}
-          className="flex items-center gap-2 rounded-xl bg-card px-6 py-3 font-semibold text-foreground transition hover:bg-muted"
+          className="flex items-center gap-2 rounded-xl bg-card px-6 py-3 font-semibold text-foreground transition hover:bg-muted border border-border"
         >
           <ArrowLeft size={18} /> Quay lại
         </Link>
       </div>
+
+      {hardCards.length > 0 && (
+        <div className="mt-8 w-full">
+          <h3 className="text-xl font-bold text-foreground text-left mb-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+            <span>Thẻ cần ôn tập thêm ({hardCards.length})</span>
+            {onRelearn && (
+              <button 
+                onClick={() => onRelearn(hardCards)}
+                className="text-sm font-semibold text-violet-400 bg-violet-500/10 px-4 py-2 rounded-lg hover:bg-violet-500/20 transition flex items-center gap-2"
+              >
+                <Brain size={16} /> Học lại các thẻ này
+              </button>
+            )}
+          </h3>
+          <div className="flex flex-col gap-3">
+            {hardCards.map(card => (
+              <div key={card.flashcardId} className="bg-card rounded-xl p-4 flex flex-col sm:flex-row gap-4 border border-border/50 text-left">
+                <div className="flex-1">
+                  <p className="text-sm text-muted-foreground mb-1">Thuật ngữ</p>
+                  <p className="font-semibold">{card.term}</p>
+                </div>
+                <div className="hidden sm:block w-px bg-border/50"></div>
+                <div className="flex-1">
+                  <p className="text-sm text-muted-foreground mb-1">Định nghĩa</p>
+                  <p className="font-semibold">{card.definition}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </motion.div>
   );
 }
@@ -267,10 +314,19 @@ export default function LearnMode({ studySetId, folderId, studySetsId, backUrl }
   if (cards.length === 0 || completed) {
     return (
       <CompletedScreen
-        total={cards.length}
+        total={initialTotal}
         masteredCount={sessionMastered}
         onRestart={handleRestart}
         backUrl={backUrl ?? (studySetId ? `/study-sets/${studySetId}` : '/')}
+        studySetId={studySetId}
+        onRelearn={(hardCards) => {
+          setCards(hardCards);
+          setInitialTotal(hardCards.length);
+          setIndex(0);
+          setRevealed(false);
+          setCompleted(false);
+          setSessionMastered(0);
+        }}
       />
     );
   }
