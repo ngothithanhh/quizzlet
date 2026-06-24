@@ -15,6 +15,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 
@@ -59,7 +60,7 @@ public class LearnServiceImpl implements LearnService {
                 progress.setMemoryLevel(0);
                 progress.setEaseFactor(Math.max(1.3, progress.getEaseFactor() - 0.2));
                 progress.setStatus(StudyStatus.LEARNING);
-                progress.setNextReviewAt(LocalDateTime.now().plusMinutes(1));
+                progress.setNextReviewAt(LocalDateTime.now().plusSeconds(25));
             }
             case HARD -> {
                 progress.setCorrectCount(progress.getCorrectCount() + 1);
@@ -67,14 +68,14 @@ public class LearnServiceImpl implements LearnService {
                 progress.setMemoryLevel(Math.max(1, progress.getMemoryLevel()));
                 progress.setEaseFactor(Math.max(1.3, progress.getEaseFactor() - 0.15));
                 progress.setStatus(StudyStatus.LEARNING);
-                progress.setNextReviewAt(LocalDateTime.now().plusMinutes(3));
+                progress.setNextReviewAt(LocalDateTime.now().plusSeconds(45));
             }
             case GOOD -> {
                 progress.setCorrectCount(progress.getCorrectCount() + 1);
                 progress.setPriorityScore(Math.max(0, progress.getPriorityScore() + 20));
                 progress.setMemoryLevel(progress.getMemoryLevel() + 2);
                 progress.setStatus(StudyStatus.REVIEW);
-                progress.setNextReviewAt(LocalDateTime.now().plusMinutes(5));
+                progress.setNextReviewAt(LocalDateTime.now().plusMinutes(1));
             }
             case EASY -> {
                 progress.setCorrectCount(progress.getCorrectCount() + 1);
@@ -86,7 +87,7 @@ public class LearnServiceImpl implements LearnService {
                 } else {
                     progress.setStatus(StudyStatus.REVIEW);
                 }
-                progress.setNextReviewAt(LocalDateTime.now().plusMinutes(10));
+                progress.setNextReviewAt(LocalDateTime.now().plusMinutes(3));
             }
         }
         progress.setRepetition(progress.getRepetition()+1);
@@ -212,6 +213,25 @@ public class LearnServiceImpl implements LearnService {
                 .sorted(Comparator.comparing(LearnCardResponse::getPriorityScore).reversed())
                 .toList();
 
+    }
+
+    @Override
+    public List<LearnCardResponse> getHardCards(Long studySetId) {
+        Long userId = SecurityUtils.getCurrentUserId();
+        User user = userRepository.findById(userId).orElseThrow(() -> new RuntimeException("Người dùng không tồn tại!"));
+        StudySet studySet = studySetRepository.findById(studySetId).orElseThrow(() -> new RuntimeException("Không tìm thấy bộ thẻ!"));
+
+        return studySet.getFlashcards().stream()
+                .filter(flashcard -> {
+                    StudyProgress progress = studyProgressRepository.findByUserAndFlashcard(user, flashcard).orElse(null);
+                    if (progress == null) return false;
+                    return (progress.getWrongCount() != null && progress.getWrongCount() > 0) 
+                            || (progress.getPriorityScore() != null && progress.getPriorityScore() >= 60);
+                })
+                .map(flashcard -> toLearnCardResponse(user, flashcard))
+                .sorted(Comparator.comparing(LearnCardResponse::getPriorityScore).reversed()
+                        .thenComparing(LearnCardResponse::getFlashcardId))
+                .toList();
     }
 
     private LearnCardResponse toLearnCardResponse(User user, Flashcard flashcard) {

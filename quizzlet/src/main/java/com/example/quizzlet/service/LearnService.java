@@ -11,4 +11,5 @@ public interface LearnService {
     List<LearnCardResponse> getCards(Long studySetId);
     void resetProgress(Long studySetId);
     List<LearnCardResponse> getCardsByFolderStudySets(Long folderId, List<Long> studySetIds);
+    List<LearnCardResponse> getHardCards(Long studySetId);
 }

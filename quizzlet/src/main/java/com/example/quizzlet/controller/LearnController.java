@@ -38,4 +38,9 @@ public class LearnController {
     public ResponseEntity<List<LearnCardResponse>> getLearnCardsByFolderStudySets(@PathVariable Long folderId, @RequestBody LearnStudySetsRequest request) {
         return ResponseEntity.ok(learnService.getCardsByFolderStudySets(folderId, request.getStudySetsId()));
     }
+
+    @GetMapping("/{studySetId}/hard-cards")
+    public ResponseEntity<List<LearnCardResponse>> getHardCards(@PathVariable Long studySetId) {
+        return ResponseEntity.ok(learnService.getHardCards(studySetId));
+    }
 }
