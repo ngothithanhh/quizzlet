@@ -3,6 +3,7 @@ package com.example.quizzlet.service.impl;
 import com.example.quizzlet.dto.learn.*;
 import com.example.quizzlet.entity.*;
 import com.example.quizzlet.enums.QuestionType;
+import com.example.quizzlet.enums.StudyStatus;
 import com.example.quizzlet.repository.*;
 import com.example.quizzlet.service.TestService;
 import com.example.quizzlet.ultils.SecurityUtils;
@@ -26,6 +27,8 @@ public class TestServiceImpl implements TestService {
     private final TestAttemptRepository testAttemptRepository;
     private final TestRepository testRepository;
     private final TestQuestionOptionRepository testQuestionOptionRepository;
+    private final StudyProgressRepository studyProgressRepository;
+    private final FlashcardRepository flashcardRepository;
 
     @Override
     public TestCardResponse getTestById(Long id) {
@@ -168,6 +171,33 @@ public class TestServiceImpl implements TestService {
 
             boolean isCorrect = question.getCorrectAnswer().equalsIgnoreCase(answerRequest.getAnswer());
             if (isCorrect) correctCount++;
+            else {
+                Flashcard flashcard = flashcardRepository.findById(question.getFlashcard().getId()).orElseThrow(()->new RuntimeException("Không tìm thấy thẻ!"));
+
+                StudyProgress studyProgress = studyProgressRepository.findByUserAndFlashcard(user,flashcard).orElse(
+                        StudyProgress.builder()
+                                .user(user)
+                                .flashcard(flashcard)
+                                .status(StudyStatus.NEW)
+                                .correctCount(0)
+                                .wrongCount(0)
+                                .memoryLevel(0)
+                                .priorityScore(0.0)
+                                .repetition(0)
+                                .easeFactor(2.5)
+                                .intervalDays(1)
+                                .build()
+                );
+
+                studyProgress.setWrongCount(studyProgress.getWrongCount() == null ? 1 : studyProgress.getWrongCount() + 1);
+                studyProgress.setPriorityScore(studyProgress.getPriorityScore() == null ? 100.0 : studyProgress.getPriorityScore() + 100.0);
+                studyProgress.setMemoryLevel(0);
+                studyProgress.setStatus(StudyStatus.LEARNING);
+                studyProgress.setLastReviewAt(LocalDateTime.now());
+                studyProgress.setNextReviewAt(LocalDateTime.now());
+                
+                studyProgressRepository.save(studyProgress);
+            }
 
             TestAnswer answer = TestAnswer.builder()
                     .userAnswer(answerRequest.getAnswer())

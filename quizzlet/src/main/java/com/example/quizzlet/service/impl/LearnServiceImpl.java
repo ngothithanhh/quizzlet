@@ -53,59 +53,44 @@ public class LearnServiceImpl implements LearnService {
         LearnResult result = request.getResult();
 
         switch (result){
-            case HARD -> {
-
-                progress.setCorrectCount(progress.getCorrectCount() + 1);
-
-                progress.setPriorityScore(progress.getPriorityScore() + 60);
-
-                progress.setMemoryLevel(progress.getMemoryLevel() + 1);
-
-                progress.setStatus(StudyStatus.LEARNING);
-            }
-
-            case EASY -> {
-
-                progress.setCorrectCount(progress.getCorrectCount() + 1);
-
-                progress.setPriorityScore(Math.max(0, progress.getPriorityScore() - 50));
-
-                progress.setMemoryLevel(progress.getMemoryLevel() + 4);
-
-                progress.setStatus(StudyStatus.MASTERED);
-            }
-
-            case GOOD -> {
-
-                progress.setCorrectCount(progress.getCorrectCount() + 1);
-
-                progress.setPriorityScore(Math.max(0, progress.getPriorityScore() + 20));
-
-                progress.setMemoryLevel(progress.getMemoryLevel() + 2);
-
-                progress.setStatus(StudyStatus.REVIEW);
-            }
-
             case AGAIN -> {
-
-                progress.setWrongCount(
-                        progress.getWrongCount() + 1
-                );
-
-                progress.setPriorityScore(
-                        progress.getPriorityScore() + 100
-                );
-
+                progress.setWrongCount(progress.getWrongCount() + 1);
+                progress.setPriorityScore(progress.getPriorityScore() + 100);
                 progress.setMemoryLevel(0);
-
-                progress.setStatus(
-                        StudyStatus.LEARNING
-                );
+                progress.setEaseFactor(Math.max(1.3, progress.getEaseFactor() - 0.2));
+                progress.setStatus(StudyStatus.LEARNING);
+                progress.setNextReviewAt(LocalDateTime.now().plusMinutes(1));
+            }
+            case HARD -> {
+                progress.setCorrectCount(progress.getCorrectCount() + 1);
+                progress.setPriorityScore(progress.getPriorityScore() + 60);
+                progress.setMemoryLevel(Math.max(1, progress.getMemoryLevel()));
+                progress.setEaseFactor(Math.max(1.3, progress.getEaseFactor() - 0.15));
+                progress.setStatus(StudyStatus.LEARNING);
+                progress.setNextReviewAt(LocalDateTime.now().plusMinutes(3));
+            }
+            case GOOD -> {
+                progress.setCorrectCount(progress.getCorrectCount() + 1);
+                progress.setPriorityScore(Math.max(0, progress.getPriorityScore() + 20));
+                progress.setMemoryLevel(progress.getMemoryLevel() + 2);
+                progress.setStatus(StudyStatus.REVIEW);
+                progress.setNextReviewAt(LocalDateTime.now().plusMinutes(5));
+            }
+            case EASY -> {
+                progress.setCorrectCount(progress.getCorrectCount() + 1);
+                progress.setPriorityScore(Math.max(0, progress.getPriorityScore() - 50));
+                progress.setMemoryLevel(progress.getMemoryLevel() + 4);
+                progress.setEaseFactor(progress.getEaseFactor() + 0.15);
+                if (progress.getMemoryLevel() >= 4) {
+                    progress.setStatus(StudyStatus.MASTERED);
+                } else {
+                    progress.setStatus(StudyStatus.REVIEW);
+                }
+                progress.setNextReviewAt(LocalDateTime.now().plusMinutes(10));
             }
         }
         progress.setRepetition(progress.getRepetition()+1);
         progress.setLastReviewAt(LocalDateTime.now());
-        progress.setNextReviewAt(LocalDateTime.now().plusDays(progress.getIntervalDays()));
         studyProgressRepository.save(progress);
 
         LearnAttempt attempt = LearnAttempt.builder()
@@ -127,8 +112,22 @@ public class LearnServiceImpl implements LearnService {
 
         return studySet.getFlashcards().stream()
                 .filter(flashcard -> {
-                    StudyProgress progress = studyProgressRepository.findByUserAndFlashcard(user,flashcard).orElse(null);
-                    return progress == null || progress.getStatus() != StudyStatus.MASTERED;
+                    StudyProgress progress = studyProgressRepository.findByUserAndFlashcard(user,flashcard).orElse(
+                        StudyProgress.builder()
+                                .user(user)
+                                .flashcard(flashcard)
+                                .status(StudyStatus.NEW)
+                                .correctCount(0)
+                                .wrongCount(0)
+                                .memoryLevel(0)
+                                .priorityScore(0.0)
+                                .repetition(0)
+                                .easeFactor(2.5)
+                                .intervalDays(1)
+                                .build()
+                    );
+                    if (progress.getStatus() == StudyStatus.MASTERED) return false;
+                    return progress.getNextReviewAt() == null || progress.getNextReviewAt().isBefore(LocalDateTime.now()) || progress.getNextReviewAt().isEqual(LocalDateTime.now());
                 })
 //                .map(flashcard -> {
 //                    StudyProgress progress = studyProgressRepository.findByUserAndFlashcard(user,flashcard).orElse(null);
@@ -205,7 +204,9 @@ public class LearnServiceImpl implements LearnService {
                             .findByUserAndFlashcard(user, flashcard)
                             .orElse(null);
 
-                    return progress == null || progress.getStatus() != StudyStatus.MASTERED;
+                    if (progress == null) return true;
+                    if (progress.getStatus() == StudyStatus.MASTERED) return false;
+                    return progress.getNextReviewAt() == null || progress.getNextReviewAt().isBefore(LocalDateTime.now()) || progress.getNextReviewAt().isEqual(LocalDateTime.now());
                 })
                 .map(flashcard -> toLearnCardResponse(user, flashcard))
                 .sorted(Comparator.comparing(LearnCardResponse::getPriorityScore).reversed())
