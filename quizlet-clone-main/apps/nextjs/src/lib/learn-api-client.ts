@@ -2,7 +2,7 @@
  * Learn API types & client – Spring Boot /api/learn endpoints.
  */
 
-import { getAccessToken } from "~/lib/auth";
+import { getAccessToken, getRefreshToken, setTokens, clearTokens } from "~/lib/auth";
 import { env } from "~/env";
 
 const BACKEND_URL = env.NEXT_PUBLIC_BACKEND_URL;
@@ -39,15 +39,84 @@ export interface LearnStudySetsRequest {
 
 // ── Core fetch ─────────────────────────────────────────────────────────────────
 
-async function apiFetch<T>(path: string, options: RequestInit = {}): Promise<T> {
-  const token = getAccessToken();
-  const headers: Record<string, string> = {
-    "Content-Type": "application/json",
-    ...(options.headers as Record<string, string>),
-  };
-  if (token) headers["Authorization"] = `Bearer ${token}`;
+let isRefreshing = false;
+let failedQueue: Array<{ resolve: (token: string) => void; reject: (err: any) => void }> = [];
 
-  const res = await fetch(`${BACKEND_URL}${path}`, { ...options, headers });
+const processQueue = (error: Error | null, token: string | null = null) => {
+  failedQueue.forEach((prom) => {
+    if (error) {
+      prom.reject(error);
+    } else {
+      prom.resolve(token!);
+    }
+  });
+  failedQueue = [];
+};
+
+async function apiFetch<T>(path: string, options: RequestInit = {}): Promise<T> {
+  const getHeaders = (token: string | null) => {
+    const headers: Record<string, string> = {
+      "Content-Type": "application/json",
+      ...(options.headers as Record<string, string>),
+    };
+    if (token) headers["Authorization"] = `Bearer ${token}`;
+    return headers;
+  };
+
+  let token = getAccessToken();
+  let res = await fetch(`${BACKEND_URL}${path}`, { ...options, headers: getHeaders(token) });
+
+  if (res.status === 401) {
+    const refreshToken = getRefreshToken();
+    if (!refreshToken) {
+      clearTokens();
+      if (typeof window !== "undefined") {
+        window.location.href = "/login";
+      }
+      throw new Error("Unauthorized - No refresh token");
+    }
+
+    if (isRefreshing) {
+      try {
+        const newToken = await new Promise<string>((resolve, reject) => {
+          failedQueue.push({ resolve, reject });
+        });
+        res = await fetch(`${BACKEND_URL}${path}`, { ...options, headers: getHeaders(newToken) });
+      } catch (err) {
+        throw err;
+      }
+    } else {
+      isRefreshing = true;
+      try {
+        const refreshRes = await fetch(`${BACKEND_URL}/api/auth/refresh?token=${encodeURIComponent(refreshToken)}`, {
+          method: "POST",
+        });
+
+        if (!refreshRes.ok) {
+          throw new Error("Refresh failed");
+        }
+
+        const data = await refreshRes.json() as { accessToken: string; refreshToken: string };
+        const newAccessToken = data.accessToken;
+        const newRefreshToken = data.refreshToken;
+
+        setTokens(newAccessToken, newRefreshToken);
+        processQueue(null, newAccessToken);
+
+        res = await fetch(`${BACKEND_URL}${path}`, { ...options, headers: getHeaders(newAccessToken) });
+      } catch (err) {
+        processQueue(err as Error, null);
+        clearTokens();
+        if (typeof window !== "undefined") {
+          window.location.href = "/login";
+        }
+        throw err;
+      } finally {
+        isRefreshing = false;
+      }
+    }
+  }
+
   if (!res.ok) {
     let msg = `API error ${res.status}`;
     try {
